@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omar Alaa Hasan | Electrical Engineering Portfolio</title>
+    <meta name="description"
+        content="Portfolio and Resume of Omar Alaa Hasan, Electrical Engineering student at KFUPM specializing in electronics, embedded systems,power engineering,and Electrical Cars. ">
+    <meta name="keywords" content="Omar Alaa Hasan, Electrical Engineering, KFUPM, Embedded Systems, Python, C, MATLAB">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="Omar Alaa Hasan | EE Portfolio">
+    <meta property="og:description"
+        content="Electrical Engineering student at KFUPM with hands-on experience in electronics prototyping and embedded development.">
+    <meta property="og:type" content="website">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../Omar%20Hasan%20website%20/logo.svg">
+
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS via CDN — config MUST come before the script -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['DM Sans', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        surface: '#000000',
+                        surfaceLight: '#111111',
+                        primary: '#01A0E8',
+                        secondary: '#0078AE',
+                        primaryGlow: 'rgba(1, 160, 232, 0.4)',
+                        textMuted: '#9ca3af',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Omar Alaa Hasan",
+      "jobTitle": "Electrical Engineering Student",
+      "url": "https://omarhasan.com",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Riyadh",
+        "addressCountry": "Saudi Arabia"
+      },
+      "email": "omar.alaa2004@outlook.sa",
+      "telephone": "+966569553175"
+    }
+    </script>
+
+    <style>
+        /* Base styles */
+        body {
+            background-color: #000000;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism utilities */
+        .glass {
+            background: rgba(10, 10, 10, 0.65);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .glass-card {
+            background: linear-gradient(145deg, rgba(24, 24, 24, 0.55) 0%, rgba(0, 0, 0, 0.88) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 40px -12px rgba(1, 160, 232, 0.35), 0 0 0 1px rgba(1, 160, 232, 0.18);
+            border-color: rgba(1, 160, 232, 0.32);
+        }
+
+        /* Text Gradients */
+        .text-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, #7dd3fc 45%, #01A0E8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Scroll Reveal Utility */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Timeline specific */
+        .timeline-dot {
+            box-shadow: 0 0 12px rgba(1, 160, 232, 0.7);
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+
+            #webgl-container,
+            nav,
+            .print-hide,
+            .reveal {
+                display: none !important;
+                opacity: 1 !important;
+                transform: none !important;
+            }
+
+            .glass,
+            .glass-card {
+                background: none;
+                border: 1px solid #ddd;
+                backdrop-filter: none;
+                box-shadow: none;
+                color: black;
+                page-break-inside: avoid;
+            }
+
+            .text-gradient {
+                background: none;
+                -webkit-text-fill-color: black;
+                color: black;
+            }
+
+            .text-muted {
+                color: #555 !important;
+            }
+
+            section {
+                padding: 1rem 0 !important;
+                min-height: auto !important;
+                page-break-inside: avoid;
+            }
+
+            h1,
+            h2,
+            h3,
+            h4 {
+                color: black !important;
+            }
+
+            a {
+                text-decoration: none;
+                color: black;
+            }
+        }
+
+        /* Focus styles for accessibility */
+        a:focus-visible,
+        button:focus-visible {
+            outline: 2px solid #01A0E8;
+            outline-offset: 4px;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #222222;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #01A0E8;
+        }
+
+        /* Section number accent */
+        .section-number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            color: #01A0E8;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        /* Tag pills */
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.65rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            background: rgba(1, 160, 232, 0.12);
+            border: 1px solid rgba(1, 160, 232, 0.25);
+            color: #7dd3fc;
+        }
+
+        /* Ambient Background Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.4;
+            animation: drift 20s infinite alternate ease-in-out;
+        }
+
+        @keyframes drift {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(8vw, 8vh) scale(1.1);
+            }
+
+            66% {
+                transform: translate(-4vw, 12vh) scale(0.9);
+            }
+
+            100% {
+                transform: translate(12vw, -4vh) scale(1.05);
+            }
+        }
+    </style>
+</head>
+
+<body class="antialiased selection:bg-primary selection:text-white relative bg-surface">
+
+    <!-- Ambient Glowing Background -->
+    <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none w-full h-full">
+        <!-- Blue Orb -->
+        <div class="orb bg-blue-600/30 w-[55vw] h-[55vw] top-[-10%] left-[-10%]" style="animation-duration: 28s;">
+        </div>
+        <!-- Cyan Orb -->
+        <div class="orb bg-cyan-600/20 w-[60vw] h-[60vw] top-[30%] right-[-20%]"
+            style="animation-duration: 34s; animation-direction: alternate-reverse;"></div>
+        <!-- Sky Orb -->
+        <div class="orb bg-sky-600/20 w-[55vw] h-[55vw] bottom-[-10%] left-[20%]"
+            style="animation-duration: 40s; animation-delay: -15s;"></div>
+    </div>
+
+    <!-- Sticky Navigation -->
+    <header class="fixed top-0 w-full z-50 transition-all duration-300 print-hide" id="navbar">
+        <div class="glass border-b border-white/10">
+            <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+                <a href="#hero" class="font-display font-bold text-xl tracking-tight flex items-center gap-2 group">
+                    <img src="../Omar%20Hasan%20website%20/logo.svg" alt="Logo"
+                        class="w-10 h-10 object-contain transition-transform duration-300 transform group-hover:scale-110">
+                    <span class="hidden sm:block group-hover:text-primary transition-colors duration-300">Omar
+                        Hasan</span>
+                </a>
+
+                <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-textMuted">
+                    <a href="#about" class="hover:text-white transition-colors">About</a>
+                    <a href="#experience" class="hover:text-white transition-colors">Experience</a>
+                    <a href="#projects" class="hover:text-white transition-colors">Projects</a>
+                    <a href="#skills" class="hover:text-white transition-colors">Skills</a>
+                </nav>
+
+                <div class="flex items-center gap-4">
+                    <a href="https://drive.google.com/drive/folders/1du-YlfT7E9yKJj2aDdexrL0tiwOKKbR0?usp=sharing"
+                        target="_blank" rel="noopener noreferrer"
+                        class="relative inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white transition-all duration-300 bg-surfaceLight border border-primary/50 rounded-full hover:bg-primary/10 hover:border-secondary/60 hover:shadow-[0_0_18px_rgba(1,160,232,0.35)] group overflow-hidden">
+                        <span class="relative z-10 flex items-center gap-2">
+                            <i class="fa-solid fa-download group-hover:-translate-y-0.5 transition-transform"></i>
+                            Download CV
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero" class="relative min-h-screen flex items-center pt-20 overflow-hidden">
+
+        <!-- Spline 3D Embed was here, moved to About section -->
+
+        <!-- Subtle background overlay for text readability -->
+        <div class="absolute inset-0 z-0 bg-gradient-to-b from-transparent via-surface/80 to-surface"></div>
+
+        <div class="relative z-10 max-w-6xl mx-auto px-6 w-full flex flex-col md:flex-row items-center gap-12">
+            <div class="flex-1 text-center md:text-left reveal">
+                <div
+                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-6 uppercase tracking-wider">
+                    <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                    Available for Opportunities
+                </div>
+
+                <h1 class="text-5xl md:text-7xl font-display font-bold mb-4 leading-[1.1] tracking-tight">
+                    Hi, I'm <br class="hidden md:block" />
+                    <span class="text-gradient">Omar Alaa Hasan</span>
+                </h1>
+
+                <p class="text-lg md:text-xl text-textMuted mb-8 max-w-2xl mx-auto md:mx-0 font-light">
+                    Electrical Engineering student at KFUPM. Passionate about <span
+                        class="text-white font-medium">electronics prototyping</span>, <span
+                        class="text-white font-medium">embedded systems</span>, <span
+                        class="text-white font-medium">electrical cars</span>, <span
+                        class="text-white font-medium">energy efficiency</span>, and <span
+                        class="text-white font-medium">power systems</span>.
+                </p>
+
+                <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-10">
+                    <a href="#projects"
+                        class="px-8 py-3 rounded-full bg-primary text-white font-semibold hover:brightness-110 transition-all shadow-[0_0_24px_rgba(91,138,240,0.4)]">
+                        View Projects
+                    </a>
+                    <a href="#contact"
+                        class="px-8 py-3 rounded-full glass hover:bg-white/10 transition-colors font-medium">
+                        Contact Me
+                    </a>
+                </div>
+
+                <div class="flex items-center justify-center md:justify-start gap-6 text-textMuted">
+                    <a href="mailto:omar.alaa2004@outlook.sa" class="hover:text-primary transition-colors text-xl"
+                        aria-label="Email">
+                        <i class="fa-solid fa-envelope"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/in/omar-hasan-952894246" target="_blank" rel="noopener noreferrer"
+                        aria-label="LinkedIn profile" class="hover:text-primary transition-colors text-xl">
+                        <i class="fa-brands fa-linkedin"></i>
+                    </a>
+                    <div class="h-4 w-px bg-white/20"></div>
+                    <span class="text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-location-dot"></i> Riyadh, SA
+                    </span>
+                </div>
+            </div>
+
+            <div class="relative reveal w-64 h-64 md:w-80 md:h-80 shrink-0">
+                <div
+                    class="absolute inset-0 rounded-full bg-gradient-to-tr from-secondary to-primary blur-2xl opacity-40 animate-pulse-slow">
+                </div>
+                <div class="absolute inset-2 rounded-full border border-white/10 z-10"></div>
+                <!-- Local Image Reference -->
+                <img src="../Omar%20Hasan%20website%20/My_photo.jpg" alt="Omar Alaa Hasan"
+                    class="relative z-20 w-full h-full object-cover rounded-full border-4 border-surface shadow-2xl"
+                    onerror="this.src='https://ui-avatars.com/api/?name=Omar+Hasan&background=0D8ABC&color=fff&size=512'">
+            </div>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div
+            class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50 animate-float print-hide">
+            <span class="text-xs uppercase tracking-widest text-textMuted">Scroll</span>
+            <div class="w-px h-12 bg-gradient-to-b from-secondary via-primary to-transparent"></div>
+        </div>
+    </section>
+
+    <!-- About / Summary Section -->
+    <section id="about" class="py-24 relative">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex items-center gap-4 mb-12 reveal">
+                <h2 class="text-3xl font-display font-bold">About Me</h2>
+                <div class="h-px flex-1 bg-gradient-to-r from-secondary/50 via-primary/30 to-transparent"></div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-12 items-center">
+                <!-- Text Container (Left side) -->
+                <div
+                    class="lg:col-span-3 glass-card p-8 md:p-12 rounded-2xl reveal relative overflow-hidden text-lg leading-relaxed text-textMuted">
+                    <div
+                        class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none">
+                    </div>
+
+                    <p class="mb-6 relative z-10">
+                        I am an Electrical Engineering student at KFUPM with hands-on experience in electronics
+                        prototyping,
+                        embedded development, and engineering software tools.
+                    </p>
+                    <p class="mb-6 relative z-10">
+                        My foundation in <span class="text-white font-medium">circuit formulation and electronics</span>
+                        is
+                        complemented by experience and a strong interest in <span class="text-white font-medium">power
+                            systems,
+                            energy efficiency, and power
+                            engineering</span>. I am comfortable working across both hardware and software
+                        boundaries—utilizing C, Python, and MATLAB alongside practical work with sensors, timing/control
+                        systems, and data-driven analysis.
+                    </p>
+                    <p class="relative z-10">
+                        Beyond technical coursework, I am deeply engaged in technical leadership and student support
+                        through
+                        university clubs and the Innovation Hub, where I strive to help others tackle complex
+                        engineering
+                        challenges.
+                    </p>
+                </div>
+
+                <!-- Spline 3D Embed Container (Right side, smaller) -->
+                <div class="lg:col-span-2 h-[400px] w-full relative reveal flex items-center justify-center p-4 bg-surfaceLight/30 rounded-2xl border border-white/5 shadow-inner"
+                    id="spline-container">
+                    <script type="module"
+                        src="https://unpkg.com/@splinetool/viewer@1.12.67/build/spline-viewer.js"></script>
+                    <spline-viewer url="https://prod.spline.design/37NIkJZWpoxS47-N/scene.splinecode"
+                        unload-on-reduced-motion="true" style="width: 100%; height: 100%;"></spline-viewer>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Experience Timeline -->
+    <section id="experience" class="py-24 bg-surfaceLight/30">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="flex items-center gap-4 mb-16 reveal">
+                <h2 class="text-3xl font-display font-bold">Experience</h2>
+                <div class="h-px flex-1 bg-gradient-to-r from-secondary/50 via-primary/30 to-transparent"></div>
+            </div>
+
+            <div class="relative pl-8 md:pl-0">
+                <!-- Timeline vertical line (Desktop: center, Mobile: left) -->
+                <div class="absolute left-0 md:left-1/2 top-0 bottom-0 w-px bg-white/10 md:-translate-x-1/2"></div>
+
+                <!-- Experience Item -->
+                <div
+                    class="relative w-full mb-12 flex flex-col md:flex-row md:justify-between items-start md:items-center reveal group">
+                    <div
+                        class="order-1 md:w-5/12 hidden md:block text-right pr-12 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <span class="text-primary font-medium tracking-wide">Jan 2026 – Jun 2026</span>
+                        <div class="text-sm text-textMuted mt-1"><i class="fa-solid fa-location-dot text-xs mr-1"></i>
+                            KFUPM, Dhahran</div>
+                    </div>
+
+                    <!-- Timeline Dot -->
+                    <div
+                        class="absolute left-[-5px] md:left-1/2 md:-translate-x-1/2 w-3 h-3 rounded-full bg-surface border-2 border-primary timeline-dot z-10 group-hover:scale-125 transition-transform">
+                    </div>
+
+                    <div class="order-1 md:w-5/12 pl-8 md:pl-12 w-full">
+                        <div class="glass-card p-6 rounded-xl">
+                            <h3 class="text-xl font-bold text-white mb-1">iHub — Innovation Hub</h3>
+                            <div class="md:hidden text-primary font-medium text-sm mb-3">Jan 2026 – Jun 2026 | KFUPM
+                            </div>
+                            <ul class="space-y-2 text-sm text-textMuted mt-4">
+                                <li class="flex items-start gap-2">
+                                    <i class="fa-solid fa-check text-primary/70 mt-1 flex-shrink-0 text-xs"></i>
+                                    <span>Supported workshops and events in electronics, circuits, and
+                                        technology.</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fa-solid fa-check text-primary/70 mt-1 flex-shrink-0 text-xs"></i>
+                                    <span>Troubleshot technical issues and assisted student project designs via hands-on
+                                        support.</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fa-solid fa-check text-primary/70 mt-1 flex-shrink-0 text-xs"></i>
+                                    <span>Consulted on design decisions, implementation, and structured
+                                        problem-solving.</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Experience Item 2 -->
+                <div
+                    class="relative w-full mb-12 flex flex-col md:flex-row md:justify-between items-start md:items-center reveal group delay-100">
+                    <div
+                        class="order-1 md:w-5/12 hidden md:block text-right pr-12 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <span class="text-primary font-medium tracking-wide">Jan 2024 – Present</span>
+                        <div class="text-sm text-textMuted mt-1"><i class="fa-solid fa-location-dot text-xs mr-1"></i>
+                            KFUPM EE Club</div>
+                    </div>
+
+                    <!-- Timeline Dot -->
+                    <div
+                        class="absolute left-[-5px] md:left-1/2 md:-translate-x-1/2 w-3 h-3 rounded-full bg-surface border-2 border-primary timeline-dot z-10 group-hover:scale-125 transition-transform">
+                    </div>
+
+                    <div class="order-1 md:w-5/12 pl-8 md:pl-12 w-full">
+                        <div class="glass-card p-6 rounded-xl">
+                            <h3 class="text-xl font-bold text-white mb-1">Member-Leader</h3>
+                            <div class="text-primary font-medium text-sm mb-3">KFUPM EE Club · Part-time
+                                <div class="md:hidden mt-0.5 opacity-80 text-xs">Jan 2024 – Present · 2 yrs 3 mos</div>
+                            </div>
+
+                            <ul class="space-y-2 text-sm text-textMuted mt-4">
+                                <li class="flex items-start gap-2">
+                                    <i class="fa-solid fa-check text-primary/70 mt-1 flex-shrink-0 text-xs"></i>
+                                    <span>Active member organizing events, workshops, and student activities.</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fa-solid fa-check text-primary/70 mt-1 flex-shrink-0 text-xs"></i>
+                                    <span>Helped enhance students' knowledge and skills in Electrical Engineering
+                                        subjects.</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Portfolio -->
+    <section id="projects" class="py-24 relative">
+        <div
+            class="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/10 to-transparent">
+        </div>
+
+        <div class="max-w-6xl mx-auto px-6 relative z-10">
+            <div class="flex items-center gap-4 mb-16 reveal">
+                <h2 class="text-3xl font-display font-bold">Projects</h2>
+                <div class="h-px flex-1 bg-gradient-to-r from-secondary/50 via-primary/30 to-transparent"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+                <!-- Project 1 -->
+                <a href="https://drive.google.com/drive/folders/1lLi9_N5uUICi1akn4U6f0llVdYjm_KXT?usp=sharing"
+                    target="_blank" rel="noopener noreferrer"
+                    class="glass-card rounded-2xl overflow-hidden flex flex-col h-full reveal group cursor-pointer block">
+                    <div class="h-48 relative overflow-hidden bg-surfaceLight flex items-center justify-center">
+                        <img src="../Omar%20Hasan%20website%20/vladimir-vereshchagin-3YcFepbuI9I-unsplash.jpg"
+                            alt="Hardware embedded device wiring"
+                            class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                        <div class="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-80">
+                        </div>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col pt-2 relative z-10">
+                        <div class="flex text-xs font-medium text-primary mb-3 gap-2">
+                            <span class="px-2 py-1 rounded bg-primary/10">Hardware</span>
+                            <span class="px-2 py-1 rounded bg-primary/10">Embedded</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 group-hover:text-primary transition-colors">Holographic Fan
+                            Display</h3>
+                        <p class="text-sm text-textMuted mb-6 flex-1">
+                            Designed a low-cost POV display using a high-speed BLDC motor, addressable LEDs, and
+                            Hall-effect sensor synchronization. Implemented custom timing control and rendering
+                            workflows.
+                        </p>
+                    </div>
+                </a>
+
+                <!-- Project 2 -->
+                <a href="https://drive.google.com/drive/folders/19Kmd0MWQkmD3KnAXx4E0I4nr0xZal_Pm?usp=sharing"
+                    target="_blank" rel="noopener noreferrer"
+                    class="glass-card rounded-2xl overflow-hidden flex flex-col h-full reveal group delay-100 cursor-pointer block">
+                    <div class="h-48 relative overflow-hidden bg-surfaceLight flex items-center justify-center">
+                        <img src="../Omar%20Hasan%20website%20/pexels-aizat-ramlan-1291546-9679179.jpg"
+                            alt="Electronic circuits macro shot"
+                            class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                        <div class="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-80">
+                        </div>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col pt-2 relative z-10">
+                        <div class="flex text-xs font-medium text-primary mb-3 gap-2">
+                            <span class="px-2 py-1 rounded bg-white/5">Circuits</span>
+                            <span class="px-2 py-1 rounded bg-white/5">Simulation</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 group-hover:text-primary transition-colors">Factory Expansion
+                            Circuit</h3>
+                        <p class="text-sm text-textMuted mb-6 flex-1">
+                            Modeled a multi-source circuit computing node voltages and power. Verified analytical hand
+                            calculations utilizing circuit simulation tools and designed a target Vab expansion network.
+                        </p>
+                    </div>
+                </a>
+
+                <!-- Project 3 -->
+                <a href="https://drive.google.com/drive/folders/1X1mmFwalZCkgUxUK5cjXzR9X12ZeIb-v?usp=sharing"
+                    target="_blank" rel="noopener noreferrer"
+                    class="glass-card rounded-2xl overflow-hidden flex flex-col h-full reveal group delay-200 cursor-pointer block">
+                    <div class="h-48 relative overflow-hidden bg-surfaceLight flex items-center justify-center">
+                        <img src="../Omar%20Hasan%20website%20/ella-ivanescu-JbfhNrpQ_dw-unsplash.jpg"
+                            alt="Cityscape with air quality analytics"
+                            class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                        <div class="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-80">
+                        </div>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col pt-2 relative z-10">
+                        <div class="flex text-xs font-medium text-primary mb-3 gap-2">
+                            <span class="px-2 py-1 rounded bg-white/5">Python</span>
+                            <span class="px-2 py-1 rounded bg-white/5">Machine Learning</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 group-hover:text-primary transition-colors">Air Pollution
+                            Classification</h3>
+                        <p class="text-sm text-textMuted mb-6 flex-1">
+                            Built a full pipeline (cleaning, scaling, train/test) on balanced air quality data.
+                            Evaluated SVM and KNN classifiers using confusion matrices.
+                        </p>
+                    </div>
+                </a>
+
+                <!-- Project 4 -->
+                <a href="https://drive.google.com/drive/folders/15Enrj2EkignXoMk0q2gQXDK0-v03cBPy?usp=sharing"
+                    target="_blank" rel="noopener noreferrer"
+                    class="glass-card rounded-2xl overflow-hidden flex flex-col h-full reveal group cursor-pointer block">
+                    <div class="h-48 relative overflow-hidden bg-surfaceLight flex items-center justify-center">
+                        <img src="../Omar%20Hasan%20website%20/pexels-sejio402-6636476.jpg"
+                            alt="Embedded Systems Microcontroller board"
+                            class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                        <div class="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-80">
+                        </div>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col pt-2 relative z-10">
+                        <div class="flex text-xs font-medium text-primary mb-3 gap-2">
+                            <span class="px-2 py-1 rounded bg-white/5">C</span>
+                            <span class="px-2 py-1 rounded bg-white/5">Embedded Systems</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 group-hover:text-primary transition-colors">Embedded Systems
+                            Project</h3>
+                        <p class="text-sm text-textMuted mb-6 flex-1">
+                            EE390 Part A & Part B implementation focusing on core microcontroller peripherals, hardware
+                            interfacing, and rigorous system debugging.
+                        </p>
+                    </div>
+                </a>
+
+                <!-- Project 5 -->
+                <a href="https://drive.google.com/drive/folders/1vizginNE7lgGeqQj5G9mIjLQIO0K2cMB?usp=sharing"
+                    target="_blank" rel="noopener noreferrer"
+                    class="glass-card rounded-2xl overflow-hidden flex flex-col h-full reveal group delay-100 cursor-pointer block">
+                    <div class="h-48 relative overflow-hidden bg-surfaceLight flex items-center justify-center">
+                        <img src="../Omar%20Hasan%20website%20/Sleep%20Health%20Dataset%20Analysis.jpg"
+                            alt="Abstract nighttime and human sleep tracking"
+                            class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                        <div class="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-80">
+                        </div>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col pt-2 relative z-10">
+                        <div class="flex text-xs font-medium text-primary mb-3 gap-2">
+                            <span class="px-2 py-1 rounded bg-white/5">Python</span>
+                            <span class="px-2 py-1 rounded bg-white/5">Data Analysis</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 group-hover:text-primary transition-colors">Sleep Health
+                            Dataset Analysis</h3>
+                        <p class="text-sm text-textMuted mb-6 flex-1">
+                            Performed exploratory data analysis and visualization to identify correlations within
+                            lifestyle and health datasets.
+                        </p>
+                    </div>
+                </a>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="py-24 bg-surfaceLight/30">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex items-center gap-4 mb-16 reveal">
+                <h2 class="text-3xl font-display font-bold">Technical Skills</h2>
+                <div class="h-px flex-1 bg-gradient-to-r from-secondary/50 via-primary/30 to-transparent"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+
+                <!-- Category 1 -->
+                <div class="reveal">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-3">
+                        <i class="fa-solid fa-microchip text-primary"></i> Hardware & Embedded
+                    </h3>
+                    <div class="space-y-5">
+                        <div class="group">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>ESP32 & Raspberry Pi</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-surface rounded-full overflow-hidden">
+                                <div
+                                    class="h-full bg-gradient-to-r from-secondary/70 via-primary/80 to-primary w-[85%] rounded-full group-hover:shadow-[0_0_10px_rgba(1,160,232,0.5)] transition-all">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="group">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Sensors & Prototyping</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-surface rounded-full overflow-hidden">
+                                <div
+                                    class="h-full bg-gradient-to-r from-secondary/70 via-primary/80 to-primary w-[90%] rounded-full group-hover:shadow-[0_0_10px_rgba(1,160,232,0.5)] transition-all">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="group">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Circuit Fundamentals</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-surface rounded-full overflow-hidden">
+                                <div
+                                    class="h-full bg-gradient-to-r from-secondary/70 via-primary/80 to-primary w-[85%] rounded-full group-hover:shadow-[0_0_10px_rgba(1,160,232,0.5)] transition-all">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category 2 -->
+                <div class="reveal delay-100">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-3">
+                        <i class="fa-solid fa-code text-primary"></i> Programming & Software
+                    </h3>
+                    <div class="space-y-5">
+                        <div class="group">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>C (Embedded)</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-surface rounded-full overflow-hidden">
+                                <div
+                                    class="h-full bg-gradient-to-r from-secondary/70 via-primary/80 to-primary w-[80%] rounded-full group-hover:shadow-[0_0_10px_rgba(1,160,232,0.5)] transition-all">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="group">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Python (Data/Automation)</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-surface rounded-full overflow-hidden">
+                                <div
+                                    class="h-full bg-gradient-to-r from-secondary/70 via-primary/80 to-primary w-[85%] rounded-full group-hover:shadow-[0_0_10px_rgba(1,160,232,0.5)] transition-all">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="group">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>MATLAB</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-surface rounded-full overflow-hidden">
+                                <div
+                                    class="h-full bg-gradient-to-r from-secondary/70 via-primary/80 to-primary w-[75%] rounded-full group-hover:shadow-[0_0_10px_rgba(1,160,232,0.5)] transition-all">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category 3 -->
+                <div class="reveal">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-3">
+                        <i class="fa-solid fa-screwdriver-wrench text-primary"></i> Engineering Tools
+                    </h3>
+                    <div class="flex flex-wrap gap-3">
+                        <span
+                            class="px-4 py-2 rounded-lg bg-surface border border-white/5 text-sm hover:border-primary/50 hover:bg-primary/5 transition-colors">KiCad</span>
+                        <span
+                            class="px-4 py-2 rounded-lg bg-surface border border-white/5 text-sm hover:border-primary/50 hover:bg-primary/5 transition-colors">Multisim</span>
+                        <span
+                            class="px-4 py-2 rounded-lg bg-surface border border-white/5 text-sm hover:border-primary/50 hover:bg-primary/5 transition-colors">Fusion
+                            360</span>
+                        <span
+                            class="px-4 py-2 rounded-lg bg-surface border border-white/5 text-sm hover:border-primary/50 hover:bg-primary/5 transition-colors">Circuit
+                            Simulation Tools</span>
+                        <span
+                            class="px-4 py-2 rounded-lg bg-surface border border-white/5 text-sm hover:border-primary/50 hover:bg-primary/5 transition-colors">n8n
+                            Automation</span>
+                        <span
+                            class="px-4 py-2 rounded-lg bg-surface border border-white/5 text-sm hover:border-primary/50 hover:bg-primary/5 transition-colors">Microsoft
+                            Office</span>
+                        <span
+                            class="px-4 py-2 rounded-lg bg-surface border border-white/5 text-sm hover:border-primary/50 hover:bg-primary/5 transition-colors">Claude
+                            Code</span>
+                    </div>
+                </div>
+
+                <!-- Category 4 -->
+                <div class="reveal delay-100">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-3">
+                        <i class="fa-solid fa-language text-primary"></i> Languages
+                    </h3>
+                    <div class="flex gap-6">
+                        <div class="flex-1 glass-card p-4 rounded-xl text-center">
+                            <div class="text-xl font-bold text-white mb-1">Arabic</div>
+                            <div class="text-xs text-primary uppercase tracking-wider">Native</div>
+                        </div>
+                        <div class="flex-1 glass-card p-4 rounded-xl text-center">
+                            <div class="text-xl font-bold text-white mb-1">English</div>
+                            <div class="text-xs text-primary uppercase tracking-wider">Fluent</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Education & Leadership -->
+    <section class="py-24 relative">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+
+                <!-- Education -->
+                <div class="reveal">
+                    <div class="flex items-center gap-4 mb-10">
+                        <h2 class="text-3xl font-display font-bold">Education</h2>
+                    </div>
+
+                    <div class="glass-card p-8 rounded-2xl relative overflow-hidden">
+                        <div class="absolute -right-6 -top-6 text-9xl text-white/5 pointer-events-none">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
+
+                        <div class="relative z-10">
+                            <h3 class="text-xl font-bold text-white mb-2">King Fahd University of Petroleum & Minerals
+                                (KFUPM)</h3>
+                            <div class="text-primary font-medium mb-1">B.S. in Electrical Engineering</div>
+                            <div class="text-sm font-medium text-white/80 mb-4">CX: Energy Efficiency
+                            </div>
+                            <div class="flex items-center gap-2 text-sm text-textMuted mb-6">
+                                <i class="fa-regular fa-calendar"></i> Aug 2022 – Expected May 2027
+                            </div>
+
+                            <div class="mt-6 border-t border-white/10 pt-6">
+                                <h4 class="text-sm font-bold text-white mb-3">Selected Coursework</h4>
+                                <ul class="space-y-2 text-sm text-textMuted">
+                                    <li class="flex items-center gap-2"><i
+                                            class="fa-solid fa-angle-right text-primary/50 text-xs"></i> Electronics
+                                        (EE303)</li>
+                                    <li class="flex items-center gap-2"><i
+                                            class="fa-solid fa-angle-right text-primary/50 text-xs"></i> Electric Energy
+                                        Engineering (EE360)</li>
+                                    <li class="flex items-center gap-2"><i
+                                            class="fa-solid fa-angle-right text-primary/50 text-xs"></i> Intro to
+                                        Artificial Intelligence (COE292)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leadership -->
+                <div class="reveal delay-100">
+                    <div class="flex items-center gap-4 mb-10">
+                        <h2 class="text-3xl font-display font-bold">Leadership</h2>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div
+                            class="glass flex items-center p-4 rounded-xl border border-white/5 hover:border-primary/30 transition-colors">
+                            <div
+                                class="w-12 h-12 rounded-lg bg-surfaceLight flex items-center justify-center text-xl text-primary shrink-0 mr-4">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white">Vice President of Media</h4>
+                                <div class="text-xs text-textMuted">Electrical Engineering Club (KFUPM)</div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="glass flex items-center p-4 rounded-xl border border-white/5 hover:border-primary/30 transition-colors">
+                            <div
+                                class="w-12 h-12 rounded-lg bg-surfaceLight flex items-center justify-center text-xl text-primary shrink-0 mr-4">
+                                <i class="fa-solid fa-book"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white">Academic Department Leader</h4>
+                                <div class="text-xs text-textMuted">Electrical Engineering Club (KFUPM)</div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="glass flex items-center p-4 rounded-xl border border-white/5 hover:border-primary/30 transition-colors">
+                            <div
+                                class="w-12 h-12 rounded-lg bg-surfaceLight flex items-center justify-center text-xl text-primary shrink-0 mr-4">
+                                <i class="fa-solid fa-laptop-code"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white">Website Team Leader</h4>
+                                <div class="text-xs text-textMuted">Electrical Engineering Club</div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="glass flex items-center p-4 rounded-xl border border-white/5 hover:border-primary/30 transition-colors">
+                            <div
+                                class="w-12 h-12 rounded-lg bg-surfaceLight flex items-center justify-center text-xl text-primary shrink-0 mr-4">
+                                <i class="fa-solid fa-car-side"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white">Event Organizer</h4>
+                                <div class="text-xs text-textMuted">ElectraThon Event</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="py-24 relative" id="contact">
+        <div class="max-w-4xl mx-auto px-6 reveal">
+            <div class="flex flex-col items-center text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold mb-4">Send a Message</h2>
+                <div class="w-24 h-1 bg-gradient-to-r from-secondary via-primary to-secondary/40 rounded-full mb-4">
+                </div>
+                <p class="text-textMuted max-w-2xl">Have a question or want to work together? Fill out the form below
+                    and I'll get back to you as soon as possible.</p>
+            </div>
+
+            <form id="contactForm" class="glass-card p-8 md:p-10 rounded-2xl relative overflow-hidden group">
+                <!-- Glowing corner effect -->
+                <div
+                    class="absolute -top-32 -right-32 w-64 h-64 bg-primary/20 blur-[80px] rounded-full group-hover:bg-primary/30 transition-colors pointer-events-none">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="space-y-2">
+                        <label for="name" class="block text-sm font-medium text-white/80">Name</label>
+                        <input type="text" id="name" required
+                            class="w-full bg-surfaceLight/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-white/20"
+                            placeholder="John Doe">
+                    </div>
+                    <div class="space-y-2">
+                        <label for="email" class="block text-sm font-medium text-white/80">Email</label>
+                        <input type="email" id="email" required
+                            class="w-full bg-surfaceLight/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-white/20"
+                            placeholder="john@example.com">
+                    </div>
+                </div>
+
+                <div class="space-y-2 mb-6">
+                    <label for="subject" class="block text-sm font-medium text-white/80">Subject</label>
+                    <input type="text" id="subject" required
+                        class="w-full bg-surfaceLight/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-white/20"
+                        placeholder="Project Inquiry / Job Opportunity">
+                </div>
+
+                <div class="space-y-2 mb-8 relative z-10">
+                    <label for="message" class="block text-sm font-medium text-white/80">Message</label>
+                    <textarea id="message" rows="5" required
+                        class="w-full bg-surfaceLight/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all resize-none placeholder:text-white/20"
+                        placeholder="How can I help you?"></textarea>
+                </div>
+
+                <button type="submit"
+                    class="w-full relative inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white transition-all duration-300 bg-gradient-to-r from-secondary/90 to-primary/90 border border-primary/60 overflow-hidden rounded-xl hover:from-secondary hover:to-primary hover:shadow-[0_0_28px_rgba(1,160,232,0.45)] group overflow-hidden">
+                    <span class="relative z-10 flex items-center gap-3 tracking-wide">
+                        SEND MESSAGE <i
+                            class="fa-solid fa-paper-plane group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></i>
+                    </span>
+                </button>
+
+                <!-- Toast Notification (Hidden by default) -->
+                <div id="toast"
+                    class="absolute inset-0 bg-surface/90 backdrop-blur-sm flex items-center justify-center z-20 opacity-0 pointer-events-none transition-opacity duration-300">
+                    <div class="text-center transform translate-y-4 transition-transform duration-300"
+                        id="toast-content">
+                        <div class="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 scale-50 transition-transform duration-500"
+                            id="toast-icon">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">Message Ready!</h3>
+                        <p class="text-textMuted text-sm px-6">Thanks! Opening your mail client to send the message.</p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-surface relative border-t border-white/5 py-16 text-center">
+        <!-- Glow accent -->
+        <div
+            class="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-secondary/60 to-transparent">
+        </div>
+        <div
+            class="absolute top-0 left-1/2 -translate-x-1/2 w-[25%] h-36 bg-primary/15 blur-[100px] pointer-events-none">
+        </div>
+
+        <div class="max-w-4xl mx-auto px-6 relative z-10 reveal">
+            <h2 class="text-3xl font-display font-bold mb-6">Let's Connect</h2>
+            <p class="text-textMuted max-w-lg mx-auto mb-10">
+                Currently exploring opportunities in Embedded Systems and Power Systems.
+                Whether you have a question or just want to say hi, feel free to reach out!
+            </p>
+
+            <div class="flex flex-wrap justify-center gap-4 mb-16">
+                <a href="mailto:omar.alaa2004@outlook.sa"
+                    class="flex items-center gap-2 px-6 py-3 rounded-xl glass hover:bg-white/10 transition-colors border-white/10 group">
+                    <i class="fa-solid fa-envelope text-primary group-hover:scale-110 transition-transform"></i>
+                    <span class="text-sm">omar.alaa2004@outlook.sa</span>
+                </a>
+                <a href="tel:+966569553175"
+                    class="flex items-center gap-2 px-6 py-3 rounded-xl glass hover:bg-white/10 transition-colors border-white/10 group">
+                    <i class="fa-solid fa-phone text-primary group-hover:scale-110 transition-transform"></i>
+                    <span class="text-sm">+966 56 955 3175</span>
+                </a>
+            </div>
+
+            <div class="flex items-center justify-center gap-6 mb-12">
+                <a href="https://www.linkedin.com/in/omar-hasan-952894246" target="_blank" rel="noopener noreferrer"
+                    aria-label="LinkedIn profile"
+                    class="w-12 h-12 rounded-full glass flex items-center justify-center text-xl hover:bg-primary hover:text-white hover:-translate-y-1 transition-all duration-300">
+                    <i class="fa-brands fa-linkedin-in"></i>
+                </a>
+                <a href="https://github.com/IQ-OMAR2004" target="_blank" rel="noopener noreferrer"
+                    aria-label="GitHub profile"
+                    class="w-12 h-12 rounded-full glass flex items-center justify-center text-xl hover:bg-primary hover:text-white hover:-translate-y-1 transition-all duration-300">
+                    <i class="fa-brands fa-github"></i>
+                </a>
+            </div>
+
+            <div
+                class="text-sm text-textMuted border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p>&copy; 2026 Omar Alaa Hasan. All rights reserved.</p>
+                <a href="#hero" class="hover:text-primary transition-colors flex items-center gap-2">
+                    Back to top <i class="fa-solid fa-arrow-up text-xs"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Handle prefers-reduced-motion for Spline
+        const initMotionRespect = () => {
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+            const splineContainer = document.getElementById('spline-container');
+
+            if (prefersReducedMotion.matches && splineContainer) {
+                // Hide spline entirely if motion is restricted, rely on solid background
+                splineContainer.style.display = 'none';
+            }
+        };
+
+        // Scroll Reveal Logic using Intersection Observer
+        const initScrollReveal = () => {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.15
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // Optional: Unobserve after revealing
+                        // observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.reveal').forEach((el) => {
+                observer.observe(el);
+            });
+        };
+
+        // Navbar scroll styling
+        const handleNavbarScroll = () => {
+            const navbar = document.getElementById('navbar');
+            const navContainer = navbar.querySelector('.glass');
+
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    navContainer.classList.add('shadow-lg', 'border-b-primary/20');
+                    navContainer.classList.remove('border-b-white/10');
+                } else {
+                    navContainer.classList.remove('shadow-lg', 'border-b-primary/20');
+                    navContainer.classList.add('border-b-white/10');
+                }
+            });
+        };
+
+        // Form handling logic
+        const initContactForm = () => {
+            const form = document.getElementById('contactForm');
+            const toast = document.getElementById('toast');
+            const toastContent = document.getElementById('toast-content');
+            const toastIcon = document.getElementById('toast-icon');
+
+            if (!form) return;
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+                const subject = document.getElementById('subject').value;
+                const message = document.getElementById('message').value;
+
+                // Show Success Toast UI
+                toast.classList.remove('opacity-0', 'pointer-events-none');
+                toast.classList.add('opacity-100');
+
+                setTimeout(() => {
+                    toastContent.classList.remove('translate-y-4');
+                    toastContent.classList.add('translate-y-0');
+                    toastIcon.classList.remove('scale-50');
+                    toastIcon.classList.add('scale-100');
+                }, 50);
+
+                // Optionally open Mailto exactly based on user format, after brief UI feedback timeout
+                setTimeout(() => {
+                    const encodedSubject = encodeURIComponent(`Message from ${name}: ${subject}`);
+                    const encodedBody = encodeURIComponent(`Hi Omar,\n\nFrom: ${name} (${email})\n\nMessage:\n${message}`);
+                    window.location.href = `mailto:omar.alaa2004@outlook.sa?subject=${encodedSubject}&body=${encodedBody}`;
+
+                    setTimeout(() => {
+                        // Reset form and toast state
+                        form.reset();
+                        toast.classList.remove('opacity-100');
+                        toast.classList.add('opacity-0', 'pointer-events-none');
+                        toastContent.classList.remove('translate-y-0');
+                        toastContent.classList.add('translate-y-4');
+                        toastIcon.classList.remove('scale-100');
+                        toastIcon.classList.add('scale-50');
+                    }, 1000);
+                }, 1500);
+            });
+        };
+
+        // Initialize all
+        document.addEventListener('DOMContentLoaded', () => {
+            initScrollReveal();
+            handleNavbarScroll();
+            initMotionRespect();
+            initContactForm();
+        });
+    </script>
+
+
+</body>
+
+</html>
