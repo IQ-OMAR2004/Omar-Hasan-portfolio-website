@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EM Wave Polarization Simulator — EE340</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+    tailwind = { config: {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans:['DM Sans','sans-serif'], display:['Space Grotesk','sans-serif'] },
+          colors: {
+            surface:'#07090f', surfaceLight:'#0d1220',
+            primary:'#5b8af0', secondary:'#8b5cf6',
+            primaryGlow:'rgba(91,138,240,0.4)', textMuted:'#8896ae',
+          }
+        }
+      }
+    }};
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body { background-color:#07090f; color:#e8edf5; overflow-x:hidden; }
+
+    /* Glass surfaces */
+    .glass {
+      background:rgba(13,18,32,0.65); backdrop-filter:blur(14px);
+      -webkit-backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,0.07);
+    }
+    .glass-card {
+      background:linear-gradient(180deg,rgba(13,18,32,0.82) 0%,rgba(7,9,15,0.82) 100%);
+      backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+      border:1px solid rgba(255,255,255,0.07); border-radius:1rem;
+    }
+
+    /* Gradient text */
+    .text-gradient {
+      background:linear-gradient(135deg,#fff 0%,#c4b5fd 45%,#5b8af0 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+
+    /* Ambient orbs */
+    .orb { position:fixed; border-radius:50%; filter:blur(100px); z-index:-1; opacity:0.4;
+           animation:drift 20s infinite alternate ease-in-out; pointer-events:none; }
+    .orb-1 { width:40vh; height:40vh; background:#5b8af0; top:-10%; left:-10%; }
+    .orb-2 { width:50vh; height:50vh; background:#3730a3; bottom:-20%; right:-10%; animation-delay:-5s; }
+    .orb-3 { width:30vh; height:30vh; background:#8b5cf6; top:40%; left:40%; animation-delay:-10s; }
+    @keyframes drift { 0%{transform:translate(0,0);} 100%{transform:translate(50px,50px);} }
+
+    /* Range sliders */
+    input[type=range] { -webkit-appearance:none; width:100%; background:transparent; }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance:none; height:15px; width:15px; border-radius:50%;
+      background:#5b8af0; cursor:pointer; margin-top:-5.5px;
+      box-shadow:0 0 8px rgba(91,138,240,0.6); transition:transform 0.1s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.2); }
+    input[type=range]::-webkit-slider-runnable-track {
+      width:100%; height:3px; cursor:pointer;
+      background:rgba(255,255,255,0.1); border-radius:2px;
+    }
+    input[type=range]:focus { outline:none; }
+    input[type=range]:focus::-webkit-slider-runnable-track { background:rgba(255,255,255,0.2); }
+
+    /* Number inputs */
+    input[type=number] {
+      background:rgba(13,18,32,0.85); border:1px solid rgba(255,255,255,0.1);
+      color:#e8edf5; border-radius:0.375rem; padding:0.2rem 0.45rem;
+      width:4.6rem; text-align:right; font-family:'DM Sans',sans-serif; font-size:0.82rem;
+    }
+    input[type=number]:focus { outline:none; border-color:#5b8af0; }
+
+    /* ── 3D canvas ── */
+    #canvas3d-container {
+      position:relative; border-radius:0.75rem; overflow:hidden;
+      border:1px solid rgba(91,138,240,0.22);
+      box-shadow:0 0 32px rgba(91,138,240,0.12);
+      transition:border-color 0.4s, box-shadow 0.4s;
+      background:#0d1220;
+    }
+    #canvas3d-container.flash {
+      border-color:rgba(91,138,240,0.85) !important;
+      box-shadow:0 0 55px rgba(91,138,240,0.5) !important;
+    }
+    #canvas3d {
+      display:block; width:100%; height:260px;
+      /* override the generic canvas rule */
+      background:transparent !important; border-radius:0 !important;
+      border:none !important; box-shadow:none !important;
+      max-width:none !important; aspect-ratio:unset !important; margin:0 !important;
+    }
+
+    /* Medium badge */
+    .badge-medium {
+      position:absolute; top:0.7rem; left:0.7rem;
+      padding:0.25rem 0.75rem; border-radius:9999px;
+      font-family:'Space Grotesk',sans-serif; font-size:0.68rem; font-weight:700;
+      letter-spacing:0.07em; z-index:10; backdrop-filter:blur(8px); pointer-events:none;
+    }
+    .badge-lossless { background:rgba(91,138,240,0.18); color:#8bb4f6; border:1px solid rgba(91,138,240,0.45); }
+    .badge-lossy    { background:rgba(245,158,11,0.16);  color:#fbbf24; border:1px solid rgba(245,158,11,0.5); }
+
+    /* 3D legend */
+    .legend-3d { position:absolute; bottom:0.65rem; left:0.7rem; display:flex; flex-direction:column; gap:0.22rem; pointer-events:none; }
+    .legend-item { display:flex; align-items:center; gap:0.35rem; font-size:0.64rem; font-family:'DM Sans',sans-serif; }
+    .legend-line  { width:16px; height:2px; border-radius:1px; flex-shrink:0; }
+
+    /* 2D canvas */
+    #waveCanvas {
+      background:#0d1220; border-radius:0.75rem;
+      border:1px solid rgba(91,138,240,0.18); box-shadow:0 0 28px rgba(91,138,240,0.1);
+      width:100%; max-width:290px; aspect-ratio:1; display:block; margin:0 auto;
+    }
+
+    /* Subsection labels */
+    .sub-label {
+      font-family:'Space Grotesk',sans-serif; font-size:0.67rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:0.1em; color:#5b6f8a;
+      display:flex; align-items:center; gap:0.4rem; margin-bottom:0.6rem;
+    }
+    .sub-label::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.06); }
+
+    /* Expandable math block */
+    details.math-block { border-radius:0.5rem; overflow:hidden; }
+    details.math-block > summary {
+      list-style:none; cursor:pointer; padding:0.6rem 0.9rem;
+      background:rgba(91,138,240,0.09); color:#8bb4f6;
+      font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.78rem;
+      user-select:none; display:flex; align-items:center; gap:0.45rem;
+      border-left:3px solid #5b8af0;
+    }
+    details.math-block > summary::-webkit-details-marker { display:none; }
+    details.math-block > summary::before {
+      content:'▶'; transition:transform 0.2s; display:inline-block; font-size:0.6rem;
+    }
+    details.math-block[open] > summary::before { transform:rotate(90deg); }
+    details.math-block > summary:hover { background:rgba(91,138,240,0.16); }
+    details.math-block pre {
+      background:#0d1220; border-left:3px solid #5b8af0;
+      padding:0.9rem 1.1rem; font-family:'Courier New',Courier,monospace;
+      font-size:0.72rem; line-height:1.75; color:#c4d4f0;
+      overflow-x:auto; white-space:pre; margin:0; max-height:320px; overflow-y:auto;
+    }
+
+    /* Visualize in 3D button */
+    .btn-visualize {
+      background:linear-gradient(135deg,#5b8af0 0%,#8b5cf6 100%);
+      box-shadow:0 0 16px rgba(91,138,240,0.38), 0 0 32px rgba(91,138,240,0.16);
+      animation:glow-pulse 2.2s infinite alternate;
+      transition:opacity 0.22s, transform 0.18s;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    .btn-visualize:hover { opacity:0.87; transform:scale(1.03); }
+    @keyframes glow-pulse {
+      0%  { box-shadow:0 0 16px rgba(91,138,240,0.38),0 0 32px rgba(91,138,240,0.16); }
+      100%{ box-shadow:0 0 26px rgba(91,138,240,0.72),0 0 54px rgba(91,138,240,0.38); }
+    }
+
+    /* Frequency chip */
+    .freq-chip {
+      display:inline-flex; align-items:center; gap:0.35rem;
+      background:rgba(91,138,240,0.12); border:1px solid rgba(91,138,240,0.3);
+      border-radius:9999px; padding:0.2rem 0.8rem;
+      font-family:'Space Grotesk',sans-serif; font-size:0.8rem; font-weight:700; color:#8bb4f6;
+    }
+
+    /* Polarization badge classes */
+    .badge-linear    { background:rgba(91,138,240,0.18); color:#8bb4f6; border:1px solid rgba(91,138,240,0.4); }
+    .badge-circular  { background:rgba(139,92,246,0.18); color:#d4c6ff; border:1px solid rgba(139,92,246,0.4); }
+    .badge-elliptical {
+      background:linear-gradient(135deg,rgba(91,138,240,0.18) 0%,rgba(139,92,246,0.18) 100%);
+      color:#e8edf5; border:1px solid rgba(139,92,246,0.4);
+    }
+
+    /* Result row */
+    .res-row {
+      display:flex; justify-content:space-between; align-items:baseline;
+      border-bottom:1px solid rgba(255,255,255,0.045); padding-bottom:0.55rem; gap:0.4rem;
+    }
+    .res-row:last-of-type { border-bottom:none; padding-bottom:0; }
+    .res-lbl { color:#8896ae; font-size:0.75rem; flex-shrink:0; }
+    .res-val { color:#e8edf5; font-size:0.77rem; font-weight:500;
+               text-align:right; font-family:'Courier New',monospace; }
+
+    /* Preset buttons */
+    .btn-preset {
+      background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09);
+      transition:all 0.2s; color:#9aa5b5;
+    }
+    .btn-preset:hover { background:rgba(91,138,240,0.14); border-color:rgba(91,138,240,0.38); color:#fff; }
+    .btn-preset.ap    { background:rgba(91,138,240,0.18); border-color:rgba(91,138,240,0.55); color:#8bb4f6; }
+
+    /* Pause button */
+    .btn-gradient { background:linear-gradient(135deg,#5b8af0 0%,#8b5cf6 100%); transition:opacity 0.25s,transform 0.18s; }
+    .btn-gradient:hover { opacity:0.88; transform:scale(1.04); }
+
+    .pulse-dot {
+      width:7px; height:7px; background:#5b8af0; border-radius:50%; display:inline-block;
+      box-shadow:0 0 7px rgba(91,138,240,0.8); animation:pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%  { box-shadow:0 0 0 0 rgba(91,138,240,0.7); }
+      70% { box-shadow:0 0 0 5px rgba(91,138,240,0); }
+      100%{ box-shadow:0 0 0 0 rgba(91,138,240,0); }
+    }
+
+    /* Active card highlight */
+    .active-pol { border-color:rgba(91,138,240,0.55) !important; box-shadow:0 0 18px rgba(91,138,240,0.28); }
+
+    /* Reveal animation */
+    .reveal { opacity:0; transform:translateY(28px); transition:all 0.8s ease-out; }
+    .reveal.active { opacity:1; transform:translateY(0); }
+
+    /* Section divider */
+    .sec-div { height:1px; background:linear-gradient(to right,transparent,rgba(139,92,246,0.38),transparent); }
+
+    /* ── View toggle tabs ── */
+    .view-tab {
+      padding:0.32rem 1.1rem; border-radius:9999px; cursor:pointer;
+      font-size:0.75rem; font-family:'Space Grotesk',sans-serif; font-weight:600;
+      color:#8896ae; transition:all 0.22s; display:flex; align-items:center; gap:0.35rem;
+    }
+    .active-vtab {
+      background:linear-gradient(135deg,#5b8af0,#8b5cf6);
+      color:#fff; box-shadow:0 0 14px rgba(91,138,240,0.5);
+    }
+
+    /* ── 3D info overlay ── */
+    #info-3d {
+      position:absolute; top:0.65rem; right:0.65rem; text-align:right;
+      pointer-events:none; line-height:1.5;
+    }
+
+    @media (max-width:640px) {
+      #canvas3d { height:210px !important; }
+      #waveCanvas { max-width:260px; }
+    }
+  </style>
+</head>
+<body class="relative min-h-screen flex flex-col font-sans">
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="container mx-auto px-4 py-10 lg:py-14 flex-grow flex flex-col z-10 relative">
+
+    <!-- ══════════════════════ HEADER ══════════════════════ -->
+    <header class="text-center mb-10">
+      <div class="inline-flex items-center justify-center gap-2 mb-4 glass rounded-full px-5 py-2">
+        <span class="pulse-dot"></span>
+        <span class="text-sm font-medium tracking-wide text-primary">Interactive Simulator</span>
+      </div>
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-3 text-gradient">Wave Polarization</h1>
+      <p class="text-textMuted text-lg font-light">EE340 · Section 7-3 · Uniform Plane Wave</p>
+    </header>
+
+    <!-- ══════════════════════ UNIFIED WORKSPACE ══════════════════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-20 items-start">
+
+      <!-- ─────────── LEFT PANEL: ALL INPUTS ─────────── -->
+      <div class="glass-card p-5 lg:col-span-3 flex flex-col gap-4">
+
+        <h2 class="font-display font-semibold text-base text-white flex items-center gap-2 border-b border-white/10 pb-3">
+          <i class="fa-solid fa-sliders text-primary text-sm"></i> Parameters
+        </h2>
+
+        <!-- ── Polarization ── -->
+        <div class="flex flex-col gap-3">
+          <p class="sub-label"><i class="fa-solid fa-wave-square text-primary/50"></i>Polarization</p>
+
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <label class="text-xs text-gray-400 font-display font-medium">Amplitude aₓ (V/m)</label>
+              <input type="number" id="num-ax" min="0.1" max="5" step="0.1" value="2">
+            </div>
+            <input type="range" id="range-ax" min="0.1" max="5" step="0.1" value="2">
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <label class="text-xs text-gray-400 font-display font-medium">Amplitude aᵧ (V/m)</label>
+              <input type="number" id="num-ay" min="0.1" max="5" step="0.1" value="1">
+            </div>
+            <input type="range" id="range-ay" min="0.1" max="5" step="0.1" value="1">
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <label class="text-xs text-gray-400 font-display font-medium">Phase φₓ (deg)</label>
+              <input type="number" id="num-phix" min="-180" max="180" step="1" value="0">
+            </div>
+            <input type="range" id="range-phix" min="-180" max="180" step="1" value="0">
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <label class="text-xs text-gray-400 font-display font-medium">Phase φᵧ (deg)</label>
+              <input type="number" id="num-phiy" min="-180" max="180" step="1" value="90">
+            </div>
+            <input type="range" id="range-phiy" min="-180" max="180" step="1" value="90">
+          </div>
+
+          <!-- Polarization presets -->
+          <div class="grid grid-cols-2 gap-1.5 mt-1">
+            <button class="btn-preset py-1.5 px-2 rounded-lg text-xs font-medium" onclick="setPreset(2,1,0,0)">Linear (δ=0°)</button>
+            <button class="btn-preset py-1.5 px-2 rounded-lg text-xs font-medium" onclick="setPreset(2,2,0,90)">LHCP</button>
+            <button class="btn-preset py-1.5 px-2 rounded-lg text-xs font-medium" onclick="setPreset(2,2,0,-90)">RHCP</button>
+            <button class="btn-preset py-1.5 px-2 rounded-lg text-xs font-medium" onclick="setPreset(3,1.5,0,60)">Elliptical</button>
+          </div>
+        </div>
+
+        <div class="h-px bg-white/5"></div>
+
+        <!-- ── Medium ── -->
+        <div class="flex flex-col gap-3">
+          <p class="sub-label"><i class="fa-solid fa-layer-group text-secondary/60"></i>Medium</p>
+
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <label class="text-xs text-gray-400 font-display font-medium">Permittivity εᵣ</label>
+              <input type="number" id="ps-num-epsr" min="1" max="100" step="0.5" value="1">
+            </div>
+            <input type="range" id="ps-range-epsr" min="1" max="100" step="0.5" value="1">
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <label class="text-xs text-gray-400 font-display font-medium">Permeability μᵣ</label>
+              <input type="number" id="ps-num-mur" min="1" max="10" step="0.1" value="1">
+            </div>
+            <input type="range" id="ps-range-mur" min="1" max="10" step="0.1" value="1">
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <label class="text-xs text-gray-400 font-display font-medium">Conductivity σ (S/m)</label>
+              <input type="number" id="ps-num-sigma" min="0" step="0.001" value="0" style="width:5.5rem;">
+            </div>
+            <input type="range" id="ps-range-sigma" min="0" max="10" step="0.001" value="0">
+            <p class="text-gray-600 text-xs">Slider 0–10 S/m · type larger values (e.g. 5.96e7)</p>
+          </div>
+
+          <!-- Medium presets -->
+          <div class="grid grid-cols-3 gap-1.5 mt-1">
+            <button class="btn-preset ap py-1.5 px-1.5 rounded-lg text-xs font-medium" id="mp-free-space" onclick="setMediumPreset('free-space')">Free Space</button>
+            <button class="btn-preset     py-1.5 px-1.5 rounded-lg text-xs font-medium" id="mp-dry-earth"  onclick="setMediumPreset('dry-earth')">Dry Earth</button>
+            <button class="btn-preset     py-1.5 px-1.5 rounded-lg text-xs font-medium" id="mp-wet-earth"  onclick="setMediumPreset('wet-earth')">Wet Earth</button>
+            <button class="btn-preset     py-1.5 px-1.5 rounded-lg text-xs font-medium" id="mp-seawater"   onclick="setMediumPreset('seawater')">Seawater</button>
+            <button class="btn-preset     py-1.5 px-1.5 rounded-lg text-xs font-medium" id="mp-tissue"     onclick="setMediumPreset('tissue')">Tissue</button>
+            <button class="btn-preset     py-1.5 px-1.5 rounded-lg text-xs font-medium" id="mp-copper"     onclick="setMediumPreset('copper')">Copper</button>
+          </div>
+        </div>
+
+        <div class="h-px bg-white/5"></div>
+
+        <!-- ── Frequency (unified control) ── -->
+        <div class="flex flex-col gap-2.5">
+          <p class="sub-label"><i class="fa-solid fa-signal text-primary/60"></i>Frequency</p>
+
+          <div class="flex items-center justify-between">
+            <div>
+              <span id="freq-chip" class="freq-chip">
+                <i class="fa-solid fa-tower-broadcast text-primary/70 text-xs"></i>
+                <span id="freq-display">100.0 MHz</span>
+              </span>
+            </div>
+            <span class="text-gray-600 text-xs">controls animation &amp; α β</span>
+          </div>
+
+          <input type="range" id="range-freq" min="0" max="100" step="0.5" value="50">
+
+          <div class="flex justify-between text-gray-600 text-xs px-0.5">
+            <span>1 MHz</span><span>10 MHz</span><span>100 M</span><span>1 GHz</span><span>10 GHz</span>
+          </div>
+        </div>
+
+      </div><!-- /left panel -->
+
+      <!-- ─────────── CENTER ─────────── -->
+      <div class="lg:col-span-6 flex flex-col gap-3">
+
+        <!-- View toggle -->
+        <div class="flex gap-0.5 p-1 bg-white/5 border border-white/10 rounded-full self-center">
+          <button id="btn-view-3d" class="view-tab active-vtab">
+            <i class="fa-solid fa-cube text-xs"></i> 3D View
+          </button>
+          <button id="btn-view-2d" class="view-tab">
+            <i class="fa-solid fa-circle-nodes text-xs"></i> 2D Trace
+          </button>
+        </div>
+
+        <!-- ══ 3D VIEW ══ -->
+        <div id="view-3d-section" class="flex flex-col gap-3">
+          <div id="canvas3d-container">
+            <canvas id="canvas3d"></canvas>
+            <div id="medium-badge" class="badge-medium badge-lossless">LOSSLESS</div>
+            <div class="legend-3d">
+              <div class="legend-item"><div class="legend-line" style="background:linear-gradient(90deg,#90c4ff,#1a3a80);"></div><span style="color:#7aa0e0;">E-field (wave)</span></div>
+              <div class="legend-item"><div class="legend-line" style="background:#4a7ae0;opacity:0.55;"></div><span style="color:#6888c0;">Eₓ projection</span></div>
+              <div class="legend-item"><div class="legend-line" style="background:#8b5cf6;opacity:0.55;"></div><span style="color:#9b78e0;">Eᵧ projection</span></div>
+              <div class="legend-item"><div class="legend-line" style="background:#40e0d0;opacity:0.75;"></div><span style="color:#6ed8d0;">Pol. ellipse</span></div>
+              <div class="legend-item"><div class="legend-line" style="background:#ef4444;"></div><span style="color:#f87171;">Tip vector</span></div>
+            </div>
+            <!-- Live info overlay (top-right) -->
+            <div id="info-3d">
+              <div id="info-3d-amp"  class="text-xs font-mono" style="color:rgba(239,68,68,0.8);"></div>
+              <div id="info-3d-freq" class="text-xs font-mono" style="color:rgba(136,150,174,0.7);"></div>
+            </div>
+          </div>
+
+          <!-- 3D controls row -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="btn-pause"
+              class="btn-gradient text-white px-4 py-2 rounded-full font-medium text-xs flex items-center gap-1.5 border border-white/10">
+              <i class="fa-solid fa-pause"></i> Pause
+            </button>
+            <button id="btn-3d-reset"
+              class="btn-preset px-4 py-2 rounded-full text-xs font-medium flex items-center gap-1.5">
+              <i class="fa-solid fa-arrows-rotate text-primary/70"></i> Reset View
+            </button>
+            <span class="text-gray-600 text-xs ml-auto hidden md:block">drag · scroll &nbsp;|&nbsp;
+              <span class="text-blue-400/70">x̂</span> Eₓ &nbsp;
+              <span class="text-purple-400/70">ŷ</span> Eᵧ &nbsp;
+              <span class="text-gray-500">ẑ</span> prop.</span>
+          </div>
+        </div>
+
+        <!-- ══ 2D TRACE VIEW ══ -->
+        <div id="view-2d-section" style="display:none;" class="flex flex-col gap-2 items-center">
+          <!-- Pause button (visible in 2D mode too) -->
+          <div class="flex items-center gap-2 w-full">
+            <button id="btn-pause-2d"
+              class="btn-gradient text-white px-4 py-2 rounded-full font-medium text-xs flex items-center gap-1.5 border border-white/10">
+              <i class="fa-solid fa-pause"></i> Pause
+            </button>
+            <span class="text-gray-600 text-xs ml-auto">Eₓ–Eᵧ polarization trace with live readout</span>
+          </div>
+          <canvas id="waveCanvas" width="500" height="500"></canvas>
+        </div>
+
+      </div><!-- /center -->
+
+      <!-- ─────────── RIGHT PANEL: ALL RESULTS ─────────── -->
+      <div class="glass-card p-5 lg:col-span-3 flex flex-col gap-4">
+
+        <h2 class="font-display font-semibold text-base text-white flex items-center gap-2 border-b border-white/10 pb-3">
+          <i class="fa-solid fa-square-root-variable text-secondary text-sm"></i> Analysis
+        </h2>
+
+        <!-- Polarization state -->
+        <div class="flex flex-col gap-3">
+          <p class="sub-label"><i class="fa-solid fa-arrows-spin text-primary/50"></i>Polarization State</p>
+
+          <div class="flex flex-col gap-2.5">
+            <div class="res-row">
+              <span class="res-lbl">Phase Diff δ</span>
+              <span id="res-delta" class="res-val">--</span>
+            </div>
+            <div class="res-row">
+              <span class="res-lbl">Aux. Angle ψ₀</span>
+              <span id="res-psi" class="res-val">--</span>
+            </div>
+            <div class="res-row">
+              <span class="res-lbl">Rotation γ</span>
+              <span id="res-gamma" class="res-val">--</span>
+            </div>
+            <div class="res-row">
+              <span class="res-lbl">Ellipticity χ</span>
+              <span id="res-chi" class="res-val">--</span>
+            </div>
+          </div>
+
+          <div id="res-badge"
+            class="px-4 py-2.5 rounded-full font-bold text-center w-full uppercase tracking-wide text-xs badge-linear shadow-md mt-1">
+            Linear
+          </div>
+        </div>
+
+        <div class="h-px bg-white/5"></div>
+
+        <!-- Propagation results -->
+        <div class="flex flex-col gap-3">
+          <p class="sub-label"><i class="fa-solid fa-wave-square text-secondary/50"></i>Wave Propagation</p>
+
+          <div class="flex flex-col gap-2.5">
+            <div class="res-row">
+              <span class="res-lbl">Attenuation α</span>
+              <span id="ps-alpha" class="res-val">0 Np/m</span>
+            </div>
+            <div class="res-row">
+              <span class="res-lbl">Phase Const. β</span>
+              <span id="ps-beta" class="res-val">--</span>
+            </div>
+            <div class="res-row">
+              <span class="res-lbl">Wavelength λ</span>
+              <span id="ps-lambda" class="res-val">--</span>
+            </div>
+            <div class="res-row">
+              <span class="res-lbl">Phase Vel. vₚ</span>
+              <span id="ps-vp" class="res-val">--</span>
+            </div>
+            <div class="res-row">
+              <span class="res-lbl">Impedance η</span>
+              <span id="ps-eta" class="res-val">--</span>
+            </div>
+            <div class="res-row">
+              <span class="res-lbl">Skin Depth δₛ</span>
+              <span id="ps-skin" class="res-val">--</span>
+            </div>
+            <div class="res-row">
+              <span class="res-lbl">Loss Tan. tan δ</span>
+              <span id="ps-tandelta" class="res-val">--</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="h-px bg-white/5"></div>
+
+        <!-- Step-by-step math -->
+        <details class="math-block">
+          <summary>
+            <i class="fa-solid fa-sigma text-primary text-xs"></i>
+            Step-by-Step Derivation
+          </summary>
+          <pre id="ps-math">Adjust sliders or pick a medium preset to see the full derivation.</pre>
+        </details>
+
+        <!-- Visualize in 3D -->
+        <button id="btn-visualize-3d"
+          class="btn-visualize w-full text-white font-display font-semibold py-3 px-5 rounded-xl text-sm flex items-center justify-center gap-2.5">
+          <i class="fa-solid fa-play text-sm"></i>
+          Visualize in 3D
+        </button>
+
+      </div><!-- /right panel -->
+
+    </div><!-- /unified workspace grid -->
+
+    <!-- ══════════════════════ DIVIDER ══════════════════════ -->
+    <div class="sec-div mb-12"></div>
+
+    <!-- ══════════════════════ EDUCATIONAL CARDS ══════════════════════ -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+
+      <div id="card-linear" class="glass-card p-7 reveal flex flex-col items-start border-t-2 border-t-transparent transition-colors">
+        <div class="mb-4 w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-xl border border-primary/20 shadow-[0_0_14px_rgba(91,138,240,0.2)]">
+          <i class="fa-solid fa-arrows-up-down"></i>
+        </div>
+        <h3 class="font-display font-bold text-lg mb-2 text-white">Linear Polarization</h3>
+        <p class="text-textMuted text-sm leading-relaxed">
+          Occurs when the phase difference <strong>δ = 0 or π</strong>. The electric field tip traces a straight line. The orientation depends on the ratio aᵧ/aₓ. No handedness is associated.
+        </p>
+      </div>
+
+      <div id="card-circular" class="glass-card p-7 reveal flex flex-col items-start border-t-2 border-t-transparent transition-colors" style="transition-delay:100ms;">
+        <div class="mb-4 w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary text-xl border border-secondary/20 shadow-[0_0_14px_rgba(139,92,246,0.2)]">
+          <i class="fa-solid fa-arrows-spin"></i>
+        </div>
+        <h3 class="font-display font-bold text-lg mb-2 text-white">Circular Polarization</h3>
+        <p class="text-textMuted text-sm leading-relaxed">
+          Requires <strong>aₓ = aᵧ</strong> and <strong>|δ| = 90°</strong> exactly. The magnitude remains constant while the angle rotates uniformly. Sign of δ determines handedness.
+        </p>
+      </div>
+
+      <div id="card-elliptical" class="glass-card p-7 reveal flex flex-col items-start relative overflow-hidden border-t-2 border-t-transparent transition-colors" style="transition-delay:200ms;">
+        <div class="absolute -right-8 -top-8 w-28 h-28 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="mb-4 w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center text-white text-lg border border-white/10 shadow-[0_0_18px_rgba(139,92,246,0.2)] relative z-10">
+          <i class="fa-solid fa-egg -rotate-[30deg]"></i>
+        </div>
+        <h3 class="font-display font-bold text-lg mb-2 text-white relative z-10">Elliptical Polarization</h3>
+        <p class="text-textMuted text-sm leading-relaxed relative z-10">
+          The general case — characterised by rotation angle <strong>γ</strong> and ellipticity angle <strong>χ</strong>. Left-hand if χ > 0, Right-hand if χ < 0.
+        </p>
+      </div>
+
+    </section>
+
+  </div><!-- /container -->
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SCRIPTS
+  ══════════════════════════════════════════════════════════════════ -->
+  <script>
+  // ══════════════════════════════════════════
+  // CONSTANTS
+  // ══════════════════════════════════════════
+  const EPS0 = 8.854e-12;
+  const MU0  = 4 * Math.PI * 1e-7;
+  const Z_MAX  = 8;
+  const N_WAVE = 260;
+
+  // ══════════════════════════════════════════
+  // SHARED STATE
+  // ══════════════════════════════════════════
+  let Ax = 2, Ay = 1, phiX = 0, phiY = 90;
+  let isPaused = false, t = 0;
+  let trail = [], activePolarizationGroup = 'elliptical';
+  let viewMode = '3d'; // '3d' | '2d'
+
+  // Frequency state (unified — drives animation speed AND medium computation)
+  let freqSliderVal = 50; // 0-100 → log scale 1MHz-10GHz; 50 = 100 MHz
+
+  // 3D propagation constants (live-updated by refreshMedium)
+  let alpha3d = 0, beta3d = Math.PI;
+
+  // ══════════════════════════════════════════
+  // UTILITY
+  // ══════════════════════════════════════════
+  function sliderToFreq(v) { return Math.pow(10, 6 + (v / 100) * 4); }
+
+  function formatFreq(f) {
+    if (f >= 1e9)  return (f/1e9).toPrecision(4)  + ' GHz';
+    if (f >= 1e6)  return (f/1e6).toPrecision(4)  + ' MHz';
+    if (f >= 1e3)  return (f/1e3).toPrecision(4)  + ' kHz';
+    return f.toExponential(3) + ' Hz';
+  }
+
+  function fmtVal(v, sig) {
+    if (!isFinite(v)) return '∞';
+    if (v === 0)      return '0';
+    const abs = Math.abs(v);
+    if (abs >= 1e-3 && abs < 1e5) return parseFloat(v.toPrecision(sig)).toString();
+    return v.toExponential(sig - 1);
+  }
+
+  // Animation speed multiplier from frequency slider (0.4 → 3.0)
+  function freqToSpeed(v) { return 0.4 + (v / 100) * 2.6; }
+
+  // ══════════════════════════════════════════
+  // THREE.JS  —  3D WAVE SCENE
+  // ══════════════════════════════════════════
+  let renderer3d, scene3d, camera3d;
+  let posE, posExP, posEyP, posEnvP, posEnvN, posTip;
+  let posEnvPY, posEnvNY, posEllipse3D, posColors3D;
+  let geoE, geoExP, geoEyP, geoEnvP, geoEnvN, geoTip;
+  let geoEnvPY, geoEnvNY, geoEllipse3D;
+  let tipSphere;
+  let camTheta = 1.1, camPhi = 0.45, camRadius = 18;
+  let isDrag3D = false, lastMX = 0, lastMY = 0;
+  let autoOrbit3D = true, lastInteract3D = 0;
+  const N_ELL3D = 200;
+
+  function init3D() {
+    const cvs = document.getElementById('canvas3d');
+    renderer3d = new THREE.WebGLRenderer({ canvas: cvs, antialias: true });
+    renderer3d.setClearColor(0x0d1220, 1);
+    renderer3d.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    scene3d  = new THREE.Scene();
+    scene3d.fog = new THREE.Fog(0x0d1220, 16, 36);
+    camera3d = new THREE.PerspectiveCamera(45, 2, 0.01, 200);
+    resize3D();
+    buildStatic3D();
+    buildDynamic3D();
+    setupCamControls();
+    updateCam();
+    new ResizeObserver(resize3D).observe(document.getElementById('canvas3d-container'));
+  }
+
+  function resize3D() {
+    const c = document.getElementById('canvas3d-container');
+    const w = c.clientWidth;
+    const h = Math.max(200, Math.min(Math.round(w * 0.48), 320));
+    renderer3d.setSize(w, h, true);
+    document.getElementById('canvas3d').style.height = h + 'px';
+    camera3d.aspect = w / h;
+    camera3d.updateProjectionMatrix();
+  }
+
+  function mkLine3D(pts, col, op) {
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat = new THREE.LineBasicMaterial({ color: col, transparent: op < 1, opacity: op });
+    scene3d.add(new THREE.Line(geo, mat));
+  }
+
+  // Text sprite helper for axis labels
+  function makeLabel3D(text, col) {
+    const c = document.createElement('canvas');
+    c.width = 192; c.height = 56;
+    const x = c.getContext('2d');
+    x.clearRect(0, 0, c.width, c.height);
+    x.font = 'bold 26px Space Grotesk, sans-serif';
+    x.fillStyle = col;
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText(text, 96, 28);
+    const tex = new THREE.CanvasTexture(c);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true, depthTest:false }));
+    sp.scale.set(1.3, 0.38, 1);
+    return sp;
+  }
+
+  function buildStatic3D() {
+    // Z propagation axis + arrowhead
+    mkLine3D([new THREE.Vector3(0,0,-0.3), new THREE.Vector3(0,0,Z_MAX+0.55)], 0xffffff, 0.32);
+    mkLine3D([new THREE.Vector3(-0.14,0,Z_MAX+0.48), new THREE.Vector3(0,0,Z_MAX+0.8)], 0xffffff, 0.32);
+    mkLine3D([new THREE.Vector3( 0.14,0,Z_MAX+0.48), new THREE.Vector3(0,0,Z_MAX+0.8)], 0xffffff, 0.32);
+    // X (Ex) and Y (Ey) axes
+    mkLine3D([new THREE.Vector3(-5.5,0,0), new THREE.Vector3(5.5,0,0)], 0x5b8af0, 0.42);
+    mkLine3D([new THREE.Vector3(0,-5.5,0), new THREE.Vector3(0,5.5,0)], 0x8b5cf6, 0.42);
+
+    // Axis labels
+    const lblEx = makeLabel3D('Eₓ →', '#7aa4f0');
+    lblEx.position.set(6.2, 0.0, 0.0);
+    scene3d.add(lblEx);
+    const lblEy = makeLabel3D('Eᵧ ↑', '#a87cf0');
+    lblEy.position.set(0.0, 6.2, 0.0);
+    scene3d.add(lblEy);
+    const lblZ = makeLabel3D('→ z (prop.)', '#8896ae');
+    lblZ.position.set(0.0, -0.6, Z_MAX + 1.3);
+    scene3d.add(lblZ);
+
+    // XZ ground grid
+    const gMat = new THREE.LineBasicMaterial({ color:0x182240, transparent:true, opacity:0.65 });
+    for (let x = -4; x <= 4; x += 2) {
+      const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,0,0), new THREE.Vector3(x,0,Z_MAX)]);
+      scene3d.add(new THREE.Line(g, gMat));
+    }
+    for (let z = 0; z <= Z_MAX; z += 2) {
+      const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-4,0,z), new THREE.Vector3(4,0,z)]);
+      scene3d.add(new THREE.Line(g, gMat));
+    }
+
+    // Z-axis tick marks (small cross hairs every 2 units)
+    for (let z = 0; z <= Z_MAX; z += 2) {
+      mkLine3D([new THREE.Vector3(-0.2,0,z), new THREE.Vector3(0.2,0,z)], 0xffffff, 0.18);
+      mkLine3D([new THREE.Vector3(0,-0.2,z), new THREE.Vector3(0,0.2,z)], 0xffffff, 0.18);
+    }
+
+    // Faint ring at z=0 showing the polarization plane
+    const ringPts = [];
+    for (let i = 0; i <= 72; i++) {
+      const a = i/72 * 2*Math.PI;
+      ringPts.push(new THREE.Vector3(Math.cos(a)*4.8, Math.sin(a)*4.8, 0));
+    }
+    mkLine3D(ringPts, 0x5b8af0, 0.10);
+  }
+
+  function mkDynGeo(buf) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(buf, 3));
+    return g;
+  }
+
+  function buildDynamic3D() {
+    posE      = new Float32Array(N_WAVE * 3);
+    posExP    = new Float32Array(N_WAVE * 3);
+    posEyP    = new Float32Array(N_WAVE * 3);
+    posEnvP   = new Float32Array(N_WAVE * 3);
+    posEnvN   = new Float32Array(N_WAVE * 3);
+    posEnvPY  = new Float32Array(N_WAVE * 3);
+    posEnvNY  = new Float32Array(N_WAVE * 3);
+    posTip    = new Float32Array(2 * 3);
+    posEllipse3D = new Float32Array((N_ELL3D + 1) * 3);
+    posColors3D  = new Float32Array(N_WAVE * 3);
+
+    geoE      = mkDynGeo(posE);     geoExP    = mkDynGeo(posExP);
+    geoEyP    = mkDynGeo(posEyP);   geoEnvP   = mkDynGeo(posEnvP);
+    geoEnvN   = mkDynGeo(posEnvN);  geoTip    = mkDynGeo(posTip);
+    geoEnvPY  = mkDynGeo(posEnvPY); geoEnvNY  = mkDynGeo(posEnvNY);
+    geoEllipse3D = mkDynGeo(posEllipse3D);
+
+    // Vertex colours on the main wave (amplitude-driven gradient)
+    geoE.setAttribute('color', new THREE.BufferAttribute(posColors3D, 3));
+
+    scene3d.add(new THREE.Line(geoE,       new THREE.LineBasicMaterial({ vertexColors:true })));
+    scene3d.add(new THREE.Line(geoExP,     new THREE.LineBasicMaterial({ color:0x4a7ae0, transparent:true, opacity:0.38 })));
+    scene3d.add(new THREE.Line(geoEyP,     new THREE.LineBasicMaterial({ color:0x7b4ce0, transparent:true, opacity:0.38 })));
+    scene3d.add(new THREE.Line(geoEnvP,    new THREE.LineBasicMaterial({ color:0x5b8af0, transparent:true, opacity:0.22 })));
+    scene3d.add(new THREE.Line(geoEnvN,    new THREE.LineBasicMaterial({ color:0x5b8af0, transparent:true, opacity:0.22 })));
+    scene3d.add(new THREE.Line(geoEnvPY,   new THREE.LineBasicMaterial({ color:0x8b5cf6, transparent:true, opacity:0.22 })));
+    scene3d.add(new THREE.Line(geoEnvNY,   new THREE.LineBasicMaterial({ color:0x8b5cf6, transparent:true, opacity:0.22 })));
+    scene3d.add(new THREE.Line(geoTip,     new THREE.LineBasicMaterial({ color:0xef4444 })));
+    // Polarization ellipse in the XY plane (z=0)
+    scene3d.add(new THREE.Line(geoEllipse3D, new THREE.LineBasicMaterial({ color:0x40e0d0, transparent:true, opacity:0.55 })));
+
+    tipSphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.15, 12, 12),
+      new THREE.MeshBasicMaterial({ color:0xef4444 })
+    );
+    scene3d.add(tipSphere);
+  }
+
+  function update3D(simT) {
+    const pxR = phiX * Math.PI / 180;
+    const pyR = phiY * Math.PI / 180;
+    const wn  = 2 * Math.PI;
+    const N_CYC = 2.5;
+    const bVis  = beta3d  > 1e-10 ? N_CYC * 2 * Math.PI / Z_MAX : Math.PI;
+    const aVis  = beta3d  > 1e-10 ? alpha3d * bVis / beta3d : 0;
+
+    // Colour stops: bright blue at origin, fades toward dark blue at far end
+    const cNear = new THREE.Color(0x90c4ff);
+    const cFar  = new THREE.Color(0x1a3a80);
+
+    for (let i = 0; i < N_WAVE; i++) {
+      const z  = (i / (N_WAVE-1)) * Z_MAX;
+      const dc = Math.exp(-aVis * z);
+      const ph = wn * simT - bVis * z;
+      const ex = Ax * Math.cos(ph + pxR) * dc;
+      const ey = Ay * Math.cos(ph + pyR) * dc;
+
+      posE[i*3]=ex;   posE[i*3+1]=ey;  posE[i*3+2]=z;
+      posExP[i*3]=ex; posExP[i*3+1]=0; posExP[i*3+2]=z;
+      posEyP[i*3]=0;  posEyP[i*3+1]=ey; posEyP[i*3+2]=z;
+
+      const envX = Ax * dc, envY = Ay * dc;
+      posEnvP[i*3]=envX;   posEnvP[i*3+1]=0;     posEnvP[i*3+2]=z;
+      posEnvN[i*3]=-envX;  posEnvN[i*3+1]=0;     posEnvN[i*3+2]=z;
+      posEnvPY[i*3]=0;     posEnvPY[i*3+1]=envY;  posEnvPY[i*3+2]=z;
+      posEnvNY[i*3]=0;     posEnvNY[i*3+1]=-envY; posEnvNY[i*3+2]=z;
+
+      // Vertex colour: bright near origin → dim at far end
+      const col = cNear.clone().lerp(cFar, 1 - dc);
+      posColors3D[i*3]=col.r; posColors3D[i*3+1]=col.g; posColors3D[i*3+2]=col.b;
+    }
+
+    geoE.attributes.position.needsUpdate    = true;
+    geoE.attributes.color.needsUpdate       = true;
+    geoExP.attributes.position.needsUpdate  = true;
+    geoEyP.attributes.position.needsUpdate  = true;
+    geoEnvP.attributes.position.needsUpdate = true;
+    geoEnvN.attributes.position.needsUpdate = true;
+    geoEnvPY.attributes.position.needsUpdate = true;
+    geoEnvNY.attributes.position.needsUpdate = true;
+
+    // Polarization ellipse in the XY plane (z=0)
+    for (let i = 0; i <= N_ELL3D; i++) {
+      const ph2 = i / N_ELL3D * 2 * Math.PI;
+      posEllipse3D[i*3]   = Ax * Math.cos(ph2 + pxR);
+      posEllipse3D[i*3+1] = Ay * Math.cos(ph2 + pyR);
+      posEllipse3D[i*3+2] = 0;
+    }
+    geoEllipse3D.attributes.position.needsUpdate = true;
+
+    // Tip vector
+    const ex0 = Ax * Math.cos(wn*simT + pxR);
+    const ey0 = Ay * Math.cos(wn*simT + pyR);
+    posTip[0]=0; posTip[1]=0; posTip[2]=0;
+    posTip[3]=ex0; posTip[4]=ey0; posTip[5]=0;
+    geoTip.attributes.position.needsUpdate = true;
+    tipSphere.position.set(ex0, ey0, 0);
+
+    // Info HUD overlay
+    const amp3d = Math.sqrt(ex0*ex0 + ey0*ey0);
+    const phi3d = Math.atan2(ey0, ex0);
+    const iAmp  = document.getElementById('info-3d-amp');
+    const iFreq = document.getElementById('info-3d-freq');
+    if (iAmp)  iAmp.textContent  = '|E| = ' + amp3d.toFixed(3) + ' V/m  ·  φ = ' + phi3d.toFixed(3) + ' rad';
+    if (iFreq) iFreq.textContent = formatFreq(sliderToFreq(freqSliderVal));
+
+    // Medium badge
+    const badge = document.getElementById('medium-badge');
+    if (badge) {
+      if (alpha3d < 1e-6) {
+        badge.textContent = 'LOSSLESS';
+        badge.className = 'badge-medium badge-lossless';
+      } else {
+        badge.textContent = 'LOSSY — α = ' + fmtVal(alpha3d, 3) + ' Np/m';
+        badge.className = 'badge-medium badge-lossy';
+      }
+    }
+
+    // Auto-orbit when user has been idle > 3 s
+    if (autoOrbit3D && Date.now() - lastInteract3D > 3000) {
+      camTheta += 0.004;
+      updateCam();
+    }
+  }
+
+  function updateCam() {
+    const lx=0, ly=0, lz=Z_MAX/2;
+    camera3d.position.set(
+      lx + camRadius * Math.sin(camPhi) * Math.sin(camTheta),
+      ly + camRadius * Math.cos(camPhi),
+      lz + camRadius * Math.sin(camPhi) * Math.cos(camTheta)
+    );
+    camera3d.lookAt(lx, ly, lz);
+  }
+
+  function setupCamControls() {
+    const el = document.getElementById('canvas3d');
+    const resetIdle = () => { autoOrbit3D = false; lastInteract3D = Date.now(); setTimeout(()=>{ autoOrbit3D=true; lastInteract3D=Date.now(); }, 4000); };
+    el.addEventListener('mousedown', e => { isDrag3D=true; lastMX=e.clientX; lastMY=e.clientY; resetIdle(); e.preventDefault(); });
+    window.addEventListener('mouseup',   () => isDrag3D=false);
+    window.addEventListener('mousemove', e => {
+      if (!isDrag3D) return;
+      camTheta -= (e.clientX-lastMX)*0.012;
+      camPhi = Math.max(0.08, Math.min(Math.PI/2-0.05, camPhi-(e.clientY-lastMY)*0.006));
+      lastMX=e.clientX; lastMY=e.clientY; resetIdle(); updateCam();
+    });
+    el.addEventListener('wheel', e => {
+      e.preventDefault();
+      camRadius = Math.max(7, Math.min(32, camRadius+e.deltaY*0.03));
+      resetIdle(); updateCam();
+    }, { passive:false });
+
+    let lTX=0, lTY=0, lPD=0;
+    el.addEventListener('touchstart', e => {
+      if(e.touches.length===1){lTX=e.touches[0].clientX; lTY=e.touches[0].clientY; isDrag3D=true; resetIdle();}
+      if(e.touches.length===2){isDrag3D=false; lPD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+      e.preventDefault();
+    },{passive:false});
+    el.addEventListener('touchmove', e => {
+      if(e.touches.length===1 && isDrag3D){
+        camTheta-=(e.touches[0].clientX-lTX)*0.012;
+        camPhi=Math.max(0.08,Math.min(Math.PI/2-0.05,camPhi-(e.touches[0].clientY-lTY)*0.006));
+        lTX=e.touches[0].clientX; lTY=e.touches[0].clientY; resetIdle(); updateCam();
+      }
+      if(e.touches.length===2){
+        const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+        camRadius=Math.max(7,Math.min(32,camRadius-(d-lPD)*0.05)); lPD=d; resetIdle(); updateCam();
+      }
+      e.preventDefault();
+    },{passive:false});
+    el.addEventListener('touchend', ()=> isDrag3D=false);
+
+    document.getElementById('btn-3d-reset').addEventListener('click', ()=>{
+      camTheta=1.1; camPhi=0.45; camRadius=18; updateCam();
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // 2D POLARIZATION
+  // ══════════════════════════════════════════
+  const inp = {
+    ax:   { n:document.getElementById('num-ax'),   r:document.getElementById('range-ax')   },
+    ay:   { n:document.getElementById('num-ay'),   r:document.getElementById('range-ay')   },
+    phix: { n:document.getElementById('num-phix'), r:document.getElementById('range-phix') },
+    phiy: { n:document.getElementById('num-phiy'), r:document.getElementById('range-phiy') },
+  };
+  const out = {
+    delta:document.getElementById('res-delta'), psi:document.getElementById('res-psi'),
+    gamma:document.getElementById('res-gamma'), chi:document.getElementById('res-chi'),
+    badge:document.getElementById('res-badge'),
+  };
+  const cards = {
+    linear:document.getElementById('card-linear'),
+    circular:document.getElementById('card-circular'),
+    elliptical:document.getElementById('card-elliptical'),
+  };
+  const cv2 = document.getElementById('waveCanvas');
+  const ctx2 = cv2.getContext('2d');
+  const cx2  = cv2.width/2, cy2 = cv2.height/2;
+  const spx  = cx2 / 6;
+
+  function bind2D(numEl, rngEl, cb) {
+    numEl.addEventListener('input', e=>{const v=parseFloat(e.target.value);if(!isNaN(v)){rngEl.value=v;cb(v);}});
+    rngEl.addEventListener('input', e=>{const v=parseFloat(e.target.value);numEl.value=v;cb(v);});
+  }
+  bind2D(inp.ax.n, inp.ax.r, v=>{Ax=v; compute2D(); trail=[];});
+  bind2D(inp.ay.n, inp.ay.r, v=>{Ay=v; compute2D(); trail=[];});
+  bind2D(inp.phix.n, inp.phix.r, v=>{phiX=v; compute2D(); trail=[];});
+  bind2D(inp.phiy.n, inp.phiy.r, v=>{phiY=v; compute2D(); trail=[];});
+
+  document.getElementById('btn-pause').addEventListener('click', ()=>{
+    isPaused = !isPaused;
+    const b = document.getElementById('btn-pause');
+    if (isPaused) { b.innerHTML='<i class="fa-solid fa-play"></i> Resume'; b.classList.replace('btn-gradient','bg-white/10'); }
+    else          { b.innerHTML='<i class="fa-solid fa-pause"></i> Pause'; b.classList.replace('bg-white/10','btn-gradient'); }
+  });
+
+  window.setPreset = function(ax,ay,px,py) {
+    inp.ax.n.value=inp.ax.r.value=Ax=ax; inp.ay.n.value=inp.ay.r.value=Ay=ay;
+    inp.phix.n.value=inp.phix.r.value=phiX=px; inp.phiy.n.value=inp.phiy.r.value=phiY=py;
+    trail=[]; compute2D();
+  };
+
+  function compute2D() {
+    const delta    = (phiY-phiX)*Math.PI/180;
+    const canD     = Math.atan2(Math.sin(delta),Math.cos(delta));
+    const canDDeg  = canD*180/Math.PI;
+    const psi0     = Math.atan2(Ay,Ax);
+    let gamma      = 0.5*Math.atan(Math.tan(2*psi0)*Math.cos(delta));
+    if (Math.cos(delta)<0 && gamma>0) gamma-=Math.PI/2;
+    else if (Math.cos(delta)>0 && gamma<0) gamma+=Math.PI/2;
+    const chi = 0.5*Math.asin(Math.sin(2*psi0)*Math.sin(delta));
+
+    out.delta.textContent = canDDeg.toFixed(2)+'°';
+    out.psi.textContent   = (psi0*180/Math.PI).toFixed(2)+'°';
+    out.gamma.textContent = (gamma*180/Math.PI).toFixed(2)+'°';
+    out.chi.textContent   = (chi*180/Math.PI).toFixed(2)+'°';
+
+    const absD     = Math.abs(canDDeg);
+    const isLinear = absD<0.5 || Math.abs(absD-180)<0.5 || Ax===0 || Ay===0;
+    let label='', cls='badge-elliptical';
+    if (isLinear) {
+      label='Linear Polarization'; cls='badge-linear'; activePolarizationGroup='linear';
+    } else if (Math.abs(Ax-Ay)<0.05 && Math.abs(absD-90)<0.5) {
+      activePolarizationGroup='circular'; cls='badge-circular';
+      label = canDDeg>0 ? 'LH Circular (LHCP)' : 'RH Circular (RHCP)';
+    } else {
+      activePolarizationGroup='elliptical';
+      label = chi>0 ? 'LH Elliptical (LHEP)' : 'RH Elliptical (RHEP)';
+    }
+    out.badge.textContent = label;
+    out.badge.className = `px-4 py-2.5 rounded-full font-bold text-center w-full uppercase tracking-wide text-xs ${cls} shadow-md mt-1`;
+    highlightCards();
+  }
+
+  function highlightCards() {
+    Object.values(cards).forEach(c=>c.classList.remove('active-pol','border-t-primary','border-t-secondary'));
+    if      (activePolarizationGroup==='linear')   cards.linear.classList.add('active-pol','border-t-primary');
+    else if (activePolarizationGroup==='circular') cards.circular.classList.add('active-pol','border-t-secondary');
+    else                                           cards.elliptical.classList.add('active-pol','border-t-primary');
+  }
+
+  function _rrect(c,x,y,w,h,r){
+    c.beginPath();
+    c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.arcTo(x+w,y,x+w,y+r,r);
+    c.lineTo(x+w,y+h-r); c.arcTo(x+w,y+h,x+w-r,y+h,r);
+    c.lineTo(x+r,y+h); c.arcTo(x,y+h,x,y+h-r,r);
+    c.lineTo(x,y+r); c.arcTo(x,y,x+r,y,r); c.closePath();
+  }
+
+  function draw2D() {
+    const W=cv2.width, H=cv2.height;
+    ctx2.clearRect(0,0,W,H);
+
+    // Vignette background
+    const vig=ctx2.createRadialGradient(cx2,cy2,W*0.2,cx2,cy2,W*0.78);
+    vig.addColorStop(0,'rgba(13,18,32,0.0)'); vig.addColorStop(1,'rgba(7,9,15,0.72)');
+    ctx2.fillStyle=vig; ctx2.fillRect(0,0,W,H);
+
+    // Fine grid (every 1 unit)
+    ctx2.strokeStyle='rgba(255,255,255,0.04)'; ctx2.lineWidth=1;
+    ctx2.beginPath();
+    for(let i=-5;i<=5;i++){
+      ctx2.moveTo(cx2+i*spx,0); ctx2.lineTo(cx2+i*spx,H);
+      ctx2.moveTo(0,cy2-i*spx); ctx2.lineTo(W,cy2-i*spx);
+    }
+    ctx2.stroke();
+
+    // Major grid (every 2 units)
+    ctx2.strokeStyle='rgba(255,255,255,0.10)'; ctx2.lineWidth=1;
+    ctx2.beginPath();
+    for(let i=-4;i<=4;i+=2){
+      ctx2.moveTo(cx2+i*spx,0); ctx2.lineTo(cx2+i*spx,H);
+      ctx2.moveTo(0,cy2-i*spx); ctx2.lineTo(W,cy2-i*spx);
+    }
+    ctx2.stroke();
+
+    // Axes
+    ctx2.strokeStyle='rgba(255,255,255,0.35)'; ctx2.lineWidth=1.8;
+    ctx2.beginPath();
+    ctx2.moveTo(cx2,12); ctx2.lineTo(cx2,H-12);
+    ctx2.moveTo(12,cy2); ctx2.lineTo(W-12,cy2);
+    ctx2.stroke();
+
+    // Axis arrowheads
+    ctx2.fillStyle='rgba(255,255,255,0.35)';
+    ctx2.beginPath(); ctx2.moveTo(cx2,8); ctx2.lineTo(cx2-5,18); ctx2.lineTo(cx2+5,18); ctx2.fill();
+    ctx2.beginPath(); ctx2.moveTo(W-8,cy2); ctx2.lineTo(W-18,cy2-5); ctx2.lineTo(W-18,cy2+5); ctx2.fill();
+
+    // Axis labels
+    ctx2.fillStyle='rgba(255,255,255,0.65)'; ctx2.font="600 12px 'Space Grotesk'";
+    ctx2.textAlign='center'; ctx2.fillText('Eₓ (V/m)',W-34,cy2-14);
+    ctx2.textAlign='left'; ctx2.fillText('Eᵧ (V/m)',cx2+10,22);
+
+    // Tick marks with numeric labels
+    ctx2.font="500 10px 'DM Sans'"; ctx2.fillStyle='rgba(255,255,255,0.42)';
+    const ticks=[-4,-2,2,4];
+    ticks.forEach(v=>{
+      // X-axis ticks
+      const tx=cx2+v*spx;
+      ctx2.strokeStyle='rgba(255,255,255,0.30)'; ctx2.lineWidth=1;
+      ctx2.beginPath(); ctx2.moveTo(tx,cy2-4); ctx2.lineTo(tx,cy2+4); ctx2.stroke();
+      ctx2.textAlign='center';
+      ctx2.fillText(v, tx, cy2+15);
+      // Y-axis ticks
+      const ty=cy2-v*spx;
+      ctx2.beginPath(); ctx2.moveTo(cx2-4,ty); ctx2.lineTo(cx2+4,ty); ctx2.stroke();
+      ctx2.textAlign='right';
+      ctx2.fillText(v, cx2-7, ty+4);
+    });
+
+    // Bounding box
+    ctx2.setLineDash([5,5]); ctx2.strokeStyle='rgba(91,138,240,0.30)'; ctx2.lineWidth=1;
+    ctx2.strokeRect(cx2-Ax*spx, cy2-Ay*spx, 2*Ax*spx, 2*Ay*spx);
+    ctx2.setLineDash([]);
+
+    // Amplitude markers — diamonds on axes
+    [[Ax,0,'#5b8af0','aₓ'],[0,Ay,'#8b5cf6','aᵧ']].forEach(([ax,ay,col,lbl])=>{
+      const mx=cx2+ax*spx, my=cy2-ay*spx, ds=7;
+      // dashed reference lines
+      ctx2.setLineDash([3,4]); ctx2.strokeStyle=col+'88'; ctx2.lineWidth=1;
+      if(ax>0){ ctx2.beginPath(); ctx2.moveTo(mx,cy2); ctx2.lineTo(mx,cy2-Ay*spx); ctx2.stroke(); }
+      if(ay>0){ ctx2.beginPath(); ctx2.moveTo(cx2,my); ctx2.lineTo(cx2+Ax*spx,my); ctx2.stroke(); }
+      ctx2.setLineDash([]);
+      // diamond
+      ctx2.fillStyle=col;
+      ctx2.beginPath(); ctx2.moveTo(mx,my-ds); ctx2.lineTo(mx+ds,my); ctx2.lineTo(mx,my+ds); ctx2.lineTo(mx-ds,my); ctx2.closePath(); ctx2.fill();
+      // label
+      ctx2.fillStyle='rgba(255,255,255,0.75)'; ctx2.font="600 10px 'Space Grotesk'";
+      ctx2.textAlign = ax>0 ? 'center' : 'right';
+      const lx = ax>0 ? mx : cx2-10;
+      const ly = ax>0 ? cy2+22 : my-10;
+      ctx2.fillText(lbl+'='+( ax>0 ? Ax : Ay ).toFixed(2), lx, ly);
+    });
+
+    // Ellipse with glow
+    const delta2=(phiY-phiX)*Math.PI/180;
+    ctx2.save();
+    ctx2.shadowColor='rgba(91,138,240,0.65)'; ctx2.shadowBlur=12;
+    ctx2.beginPath(); ctx2.strokeStyle='rgba(91,138,240,0.72)'; ctx2.lineWidth=2.5;
+    for(let i=0;i<=360;i++){
+      const ph=i/360*2*Math.PI, ex=Ax*Math.cos(ph), ey=Ay*Math.cos(ph+delta2);
+      i===0 ? ctx2.moveTo(cx2+ex*spx,cy2-ey*spx) : ctx2.lineTo(cx2+ex*spx,cy2-ey*spx);
+    }
+    ctx2.stroke();
+    ctx2.restore();
+
+    // Current tip
+    const wn2=2*Math.PI;
+    const cEx=Ax*Math.cos(wn2*t+phiX*Math.PI/180);
+    const cEy=Ay*Math.cos(wn2*t+phiY*Math.PI/180);
+    const dx=cx2+cEx*spx, dy=cy2-cEy*spx;
+    const eMag=Math.sqrt(cEx*cEx+cEy*cEy);
+
+    // Trail
+    if(!isPaused){trail.push({x:dx,y:dy}); if(trail.length>30) trail.shift();}
+    for(let i=0;i<trail.length;i++){
+      const pt=trail[i], a=(i/trail.length)*0.5;
+      ctx2.beginPath(); ctx2.fillStyle=`rgba(239,68,68,${a})`;
+      ctx2.arc(pt.x,pt.y,3.5,0,2*Math.PI); ctx2.fill();
+    }
+
+    // Vector line
+    ctx2.beginPath(); ctx2.strokeStyle='rgba(239,68,68,0.65)'; ctx2.lineWidth=2;
+    ctx2.moveTo(cx2,cy2); ctx2.lineTo(dx,dy); ctx2.stroke();
+
+    // Phase angle arc — from +x axis to current tip
+    const eMathAngle = Math.atan2(-cEy, cEx); // canvas Y is inverted
+    const arcR = Math.min(spx*1.0, 36);
+    ctx2.beginPath();
+    ctx2.strokeStyle='rgba(250,204,21,0.82)'; ctx2.lineWidth=1.5;
+    ctx2.arc(cx2, cy2, arcR, 0, -eMathAngle, eMathAngle<0);
+    ctx2.stroke();
+    // arc angle label
+    const midA = eMathAngle/2;
+    const lrx = cx2+(arcR+12)*Math.cos(-midA);
+    const lry = cy2+(arcR+12)*Math.sin(-midA);
+    ctx2.fillStyle='rgba(250,204,21,0.90)'; ctx2.font="600 10px 'Space Grotesk'";
+    ctx2.textAlign='center';
+    ctx2.fillText(eMathAngle.toFixed(2)+' rad', lrx, lry);
+
+    // Tip glow + dot
+    const grd=ctx2.createRadialGradient(dx,dy,0,dx,dy,14);
+    grd.addColorStop(0,'rgba(239,68,68,0.55)'); grd.addColorStop(1,'rgba(239,68,68,0)');
+    ctx2.beginPath(); ctx2.fillStyle=grd; ctx2.arc(dx,dy,14,0,2*Math.PI); ctx2.fill();
+    ctx2.beginPath(); ctx2.fillStyle='#ef4444'; ctx2.arc(dx,dy,5.5,0,2*Math.PI); ctx2.fill();
+
+    // Amplitude label near tip
+    ctx2.fillStyle='rgba(255,255,255,0.80)'; ctx2.font="600 10px 'Space Grotesk'";
+    ctx2.textAlign='left';
+    ctx2.fillText(eMag.toFixed(2)+' V/m', dx+9, dy-8);
+
+    // HUD overlay
+    const hudX=10, hudY=10, hudW=138, hudH=46;
+    ctx2.save();
+    _rrect(ctx2,hudX,hudY,hudW,hudH,8);
+    ctx2.fillStyle='rgba(13,18,32,0.72)'; ctx2.fill();
+    ctx2.strokeStyle='rgba(91,138,240,0.28)'; ctx2.lineWidth=1; ctx2.stroke();
+    ctx2.restore();
+    ctx2.fillStyle='rgba(255,255,255,0.55)'; ctx2.font="500 10px 'DM Sans'";
+    ctx2.textAlign='left';
+    ctx2.fillText('|E| = '+eMag.toFixed(4)+' V/m', hudX+10, hudY+18);
+    ctx2.fillStyle='rgba(250,204,21,0.80)';
+    ctx2.fillText('φ  = '+eMathAngle.toFixed(4)+' rad', hudX+10, hudY+34);
+  }
+
+  // ══════════════════════════════════════════
+  // MEDIUM / PROPAGATION (Problem Solver)
+  // ══════════════════════════════════════════
+  const PRESETS = {
+    'free-space':{ eps_r:1,  mu_r:1, sigma:0      },
+    'dry-earth': { eps_r:4,  mu_r:1, sigma:0.001  },
+    'wet-earth': { eps_r:10, mu_r:1, sigma:0.1    },
+    'seawater':  { eps_r:80, mu_r:1, sigma:4      },
+    'tissue':    { eps_r:50, mu_r:1, sigma:0.7    },
+    'copper':    { eps_r:1,  mu_r:1, sigma:5.96e7 },
+  };
+
+  let ps_eps_r=1, ps_mu_r=1, ps_sigma=0;
+
+  function bindMedSlider(numId, rngId, setter) {
+    const n=document.getElementById(numId), r=document.getElementById(rngId);
+    n.addEventListener('input', e=>{const v=parseFloat(e.target.value);if(!isNaN(v)){r.value=Math.min(parseFloat(r.max),v);setter(v);refreshMedium();}});
+    r.addEventListener('input', e=>{const v=parseFloat(e.target.value);n.value=v;setter(v);refreshMedium();});
+  }
+  bindMedSlider('ps-num-epsr',  'ps-range-epsr',  v=>ps_eps_r=v);
+  bindMedSlider('ps-num-mur',   'ps-range-mur',   v=>ps_mu_r=v);
+  bindMedSlider('ps-num-sigma', 'ps-range-sigma', v=>ps_sigma=v);
+
+  window.setMediumPreset = function(key) {
+    const p = PRESETS[key]; if (!p) return;
+    ps_eps_r=p.eps_r; ps_mu_r=p.mu_r; ps_sigma=p.sigma;
+    document.getElementById('ps-num-epsr').value  = document.getElementById('ps-range-epsr').value  = ps_eps_r;
+    document.getElementById('ps-num-mur').value   = document.getElementById('ps-range-mur').value   = ps_mu_r;
+    document.getElementById('ps-num-sigma').value = ps_sigma;
+    document.getElementById('ps-range-sigma').value = Math.min(10, ps_sigma);
+    document.querySelectorAll('[id^="mp-"]').forEach(b=>b.classList.remove('ap'));
+    const btn = document.getElementById('mp-' + key);
+    if (btn) btn.classList.add('ap');
+    refreshMedium();
+  };
+
+  function computeMedium() {
+    const f     = sliderToFreq(freqSliderVal);
+    const omega = 2*Math.PI*f;
+    const ep    = ps_eps_r * EPS0;
+    const mu    = ps_mu_r  * MU0;
+    const ratio = ps_sigma / (omega * ep);
+    const inner = Math.sqrt(1 + ratio*ratio);
+    const cmn   = omega * Math.sqrt(mu * ep / 2);
+    const alpha = cmn * Math.sqrt(inner - 1);
+    const beta  = cmn * Math.sqrt(inner + 1);
+    const dEta  = Math.sqrt(ps_sigma*ps_sigma + Math.pow(omega*ep, 2));
+    return {
+      f, omega, ep, mu, ratio, inner, cmn, alpha, beta,
+      lambda: 2*Math.PI/beta, vp: omega/beta,
+      skin_d: alpha>1e-10 ? 1/alpha : Infinity,
+      eta_mag: Math.sqrt((omega*mu)/dEta),
+      theta_eta: 0.5*Math.atan2(ps_sigma, omega*ep),
+      tan_d: ratio, dEta,
+      cls: ps_sigma<1e-12 ? 'Perfect Dielectric'
+         : ratio<0.01     ? 'Low-loss Dielectric'
+         : ratio<100      ? 'Lossy Medium' : 'Good Conductor',
+    };
+  }
+
+  function refreshMedium() {
+    const p = computeMedium();
+    // Live-push to 3D scene
+    alpha3d = p.alpha;
+    beta3d  = p.beta;
+    // Update result rows
+    document.getElementById('ps-alpha').textContent =
+      p.alpha<1e-10 ? '0 Np/m' : fmtVal(p.alpha,4)+' Np/m ('+fmtVal(p.alpha*8.686,4)+' dB/m)';
+    document.getElementById('ps-beta').textContent     = fmtVal(p.beta,4)+' rad/m';
+    document.getElementById('ps-lambda').textContent   = fmtVal(p.lambda,4)+' m';
+    document.getElementById('ps-vp').textContent       = fmtVal(p.vp,4)+' m/s ('+fmtVal(p.vp/3e8,4)+'c)';
+    document.getElementById('ps-eta').textContent      = fmtVal(p.eta_mag,4)+' Ω  ∠'+( p.theta_eta*180/Math.PI).toFixed(2)+'°';
+    document.getElementById('ps-skin').textContent     = isFinite(p.skin_d)?fmtVal(p.skin_d,4)+' m':'∞  (lossless)';
+    document.getElementById('ps-tandelta').textContent = fmtVal(p.tan_d,4)+'  — '+p.cls;
+    document.getElementById('ps-math').textContent     = buildMathText(p);
+  }
+
+  function buildMathText(p) {
+    const { f, omega, ep, mu, ratio, inner, cmn, alpha, beta,
+            lambda, vp, skin_d, eta_mag, theta_eta, tan_d, dEta } = p;
+    return (
+`╔══════════════════════════════════════════════════════════════╗
+║  STEP-BY-STEP DERIVATION — Wave Propagation in Lossy Media  ║
+╚══════════════════════════════════════════════════════════════╝
+
+GIVEN PARAMETERS:
+  εᵣ = ${ps_eps_r.toFixed(2)}    μᵣ = ${ps_mu_r.toFixed(2)}    σ = ${fmtVal(ps_sigma,4)} S/m
+  f  = ${formatFreq(f)}   →   ω = 2πf = ${fmtVal(omega,4)} rad/s
+
+PHYSICAL CONSTANTS:
+  ε₀ = 8.854×10⁻¹² F/m
+  μ₀ = 4π×10⁻⁷   = ${fmtVal(MU0,4)} H/m
+
+STEP 1 — Medium parameters:
+  ε' = εᵣ·ε₀ = ${ps_eps_r.toFixed(2)} × 8.854×10⁻¹² = ${fmtVal(ep,4)} F/m
+  μ  = μᵣ·μ₀ = ${ps_mu_r.toFixed(2)} × ${fmtVal(MU0,4)} = ${fmtVal(mu,4)} H/m
+
+STEP 2 — Loss tangent  (ε''/ε' ratio):
+  tan δ = σ / (ω·ε')
+        = ${fmtVal(ps_sigma,4)} / (${fmtVal(omega,4)} × ${fmtVal(ep,4)})
+        = ${fmtVal(tan_d,4)}   ← ${p.cls}
+
+STEP 3 — √(1 + tan²δ):
+  √(1 + (${fmtVal(tan_d,4)})²) = √(1 + ${fmtVal(tan_d*tan_d,4)}) = ${fmtVal(inner,4)}
+
+STEP 4 — Common factor  ω√(με'/2):
+  με'/2    = ${fmtVal(mu*ep/2,4)}
+  √(με'/2) = ${fmtVal(Math.sqrt(mu*ep/2),4)}
+  ω·√(με'/2) = ${fmtVal(cmn,4)}
+
+STEP 5 — Attenuation constant α (Np/m):
+  α = ω√(με'/2) · √(√(1+tan²δ) − 1)
+    = ${fmtVal(cmn,4)} · √(${fmtVal(inner,4)} − 1)
+    = ${fmtVal(cmn,4)} · ${fmtVal(Math.sqrt(Math.max(0,inner-1)),4)}
+    = ${fmtVal(alpha,4)} Np/m  [= ${fmtVal(alpha*8.686,4)} dB/m]
+
+STEP 6 — Phase constant β (rad/m):
+  β = ω√(με'/2) · √(√(1+tan²δ) + 1)
+    = ${fmtVal(cmn,4)} · ${fmtVal(Math.sqrt(inner+1),4)}
+    = ${fmtVal(beta,4)} rad/m
+
+STEP 7 — Wavelength & phase velocity:
+  λ  = 2π / β = ${fmtVal(lambda,4)} m
+  vₚ = ω  / β = ${fmtVal(vp,4)} m/s  = ${fmtVal(vp/3e8,4)}×c
+
+STEP 8 — Skin depth:
+  δₛ = 1/α = ${isFinite(skin_d)?`1/${fmtVal(alpha,4)} = ${fmtVal(skin_d,4)} m`:'∞  (α = 0, lossless)'}
+
+STEP 9 — Intrinsic impedance  ηc = |η|∠θη:
+  denom = √(σ² + (ωε')²) = ${fmtVal(dEta,4)}
+  |η| = √(ω·μ / denom) = √(${fmtVal(omega*mu,4)} / ${fmtVal(dEta,4)})
+      = ${fmtVal(eta_mag,4)} Ω
+  θη  = ½·arctan(σ/(ωε')) = ${(theta_eta*180/Math.PI).toFixed(2)}°`);
+  }
+
+  // Frequency slider (unified)
+  document.getElementById('range-freq').addEventListener('input', e => {
+    freqSliderVal = parseFloat(e.target.value);
+    document.getElementById('freq-display').textContent = formatFreq(sliderToFreq(freqSliderVal));
+    refreshMedium();
+  });
+
+  // Visualize in 3D button — scrolls to 3D canvas + flash
+  document.getElementById('btn-visualize-3d').addEventListener('click', () => {
+    const c3 = document.getElementById('canvas3d-container');
+    c3.classList.add('flash');
+    setTimeout(()=>c3.classList.remove('flash'), 850);
+    c3.scrollIntoView({ behavior:'smooth', block:'center' });
+  });
+
+  // ══════════════════════════════════════════
+  // UNIFIED ANIMATION LOOP
+  // ══════════════════════════════════════════
+  function mainLoop() {
+    if (!isPaused) t += 0.005 * freqToSpeed(freqSliderVal);
+    if (viewMode === '2d') {
+      draw2D();
+    } else {
+      update3D(t);
+      renderer3d.render(scene3d, camera3d);
+    }
+    requestAnimationFrame(mainLoop);
+  }
+
+  // ══════════════════════════════════════════
+  // SCROLL REVEAL
+  // ══════════════════════════════════════════
+  const ro = new IntersectionObserver(es=>{
+    es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('active');ro.unobserve(e.target);}});
+  }, { threshold:0.1 });
+  document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+
+  // ══════════════════════════════════════════
+  // VIEW TOGGLE
+  // ══════════════════════════════════════════
+  function setView(mode) {
+    viewMode = mode;
+    const s3 = document.getElementById('view-3d-section');
+    const s2 = document.getElementById('view-2d-section');
+    const b3 = document.getElementById('btn-view-3d');
+    const b2 = document.getElementById('btn-view-2d');
+    if (mode === '3d') {
+      s3.style.display = ''; s2.style.display = 'none';
+      b3.classList.add('active-vtab'); b2.classList.remove('active-vtab');
+    } else {
+      s3.style.display = 'none'; s2.style.display = '';
+      b2.classList.add('active-vtab'); b3.classList.remove('active-vtab');
+      trail = [];
+    }
+  }
+  document.getElementById('btn-view-3d').addEventListener('click', ()=>setView('3d'));
+  document.getElementById('btn-view-2d').addEventListener('click', ()=>setView('2d'));
+
+  const btnPause = document.getElementById('btn-pause-2d');
+  if (btnPause) {
+    btnPause.addEventListener('click', ()=>{
+      isPaused = !isPaused;
+      btnPause.textContent = isPaused ? 'Resume' : 'Pause';
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // BOOT
+  // ══════════════════════════════════════════
+  init3D();
+  compute2D();
+  refreshMedium();
+  mainLoop();
+  </script>
+</body>
+</html>
