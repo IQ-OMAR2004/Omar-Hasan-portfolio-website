@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signals & Systems Lab</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['DM Sans', 'sans-serif'], display: ['Space Grotesk', 'sans-serif'] },
+                    colors: {
+                        surface: '#000000', surfaceLight: '#111111',
+                        primary: '#01A0E8', secondary: '#0078AE',
+                        primaryGlow: 'rgba(1, 160, 232, 0.4)', textMuted: '#9ca3af',
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            background-color: #000000;
+            color: #f3f4f6;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .glass {
+            background: rgba(10, 10, 10, 0.65);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .glass-card {
+            background: linear-gradient(145deg, rgba(24, 24, 24, 0.55) 0%, rgba(0, 0, 0, 0.88) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px -10px rgba(1, 160, 232, 0.35), 0 0 0 1px rgba(1, 160, 232, 0.18);
+            border-color: rgba(1, 160, 232, 0.32);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, #7dd3fc 45%, #01A0E8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.4;
+            animation: drift 20s infinite alternate ease-in-out;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes drift {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            100% {
+                transform: translate(5vw, 5vh) scale(1.05);
+            }
+        }
+
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+            animation: fadeIn 0.4s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Custom Inputs */
+        input[type="text"],
+        input[type="number"],
+        select {
+            background-color: #111111;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 0.75rem;
+            padding: 0.5rem 1rem;
+            outline: none;
+            transition: all 0.2s;
+            width: 100%;
+            font-family: monospace;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #01A0E8;
+            box-shadow: 0 0 0 1px #01A0E8;
+        }
+
+        input[type="range"] {
+            accent-color: #01A0E8;
+            width: 100%;
+        }
+
+        /* Utils */
+        .math-box {
+            font-family: monospace;
+            background: #111111;
+            border: 1px solid rgba(1, 160, 232, 0.2);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            color: #01A0E8;
+            font-size: 1.1rem;
+            text-align: center;
+            overflow-x: auto;
+        }
+
+        .btn-primary {
+            border-radius: 9999px;
+            background-color: #01A0E8;
+            color: white;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 0 24px rgba(1, 160, 232, 0.4);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+
+        .tag-pill {
+            background: rgba(1, 160, 232, 0.1);
+            color: #01A0E8;
+            border: 1px solid rgba(1, 160, 232, 0.2);
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.25rem 0.75rem;
+            display: inline-block;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            vertical-align: middle;
+        }
+
+        .badge-success {
+            background: rgba(34, 197, 94, 0.1);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .badge-fail {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .err-msg {
+            border-radius: 0.5rem;
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="font-sans">
+    <!-- Ambient Orbs -->
+    <div class="orb bg-blue-600/30 w-[40vw] h-[40vw] top-[-10%] left-[-10%]"></div>
+    <div class="orb bg-teal-600/20 w-[30vw] h-[30vw] bottom-[-10%] right-[-10%]"
+        style="animation-direction: alternate-reverse; animation-duration: 25s;"></div>
+
+    <!-- Sticky Navbar -->
+    <nav class="fixed top-0 w-full z-50 glass">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="font-display font-bold text-2xl tracking-tight text-gradient">
+                <i class="fa-solid fa-wave-square mr-2 text-primary"></i>Signals & Systems Lab
+            </div>
+            <div class="hidden md:flex gap-2 items-center">
+                <div class="mr-6 flex items-center gap-2">
+                    <label class="text-xs text-textMuted uppercase tracking-wider font-bold">X-Axis Range ±</label>
+                    <input type="number" id="global-t-max" value="10" step="5"
+                        class="w-16 bg-black/50 border border-white/20 rounded-lg px-2 py-1 text-white text-center text-sm font-mono focus:border-primary outline-none transition-colors"
+                        onchange="updateGlobalRange()">
+                </div>
+                <button onclick="switchTab('tab1')"
+                    class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:text-white text-textMuted"
+                    data-target="tab1">Builder</button>
+                <button onclick="switchTab('tab2')"
+                    class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:text-white text-textMuted"
+                    data-target="tab2">Library</button>
+                <button onclick="switchTab('tab3')"
+                    class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors text-white bg-white/10"
+                    data-target="tab3">Convolution</button>
+                <!-- <button onclick="switchTab('tab4')"
+                    class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:text-white text-textMuted"
+                    data-target="tab4">Properties</button> -->
+                <button onclick="switchTab('tab5')"
+                    class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:text-white text-textMuted"
+                    data-target="tab5">Fourier</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-28 pb-24 max-w-7xl mx-auto px-6">
+
+        <!-- TAB 1: Signal Builder -->
+        <section id="tab1" class="tab-content">
+            <h2 class="text-3xl font-display font-bold text-gradient mb-8">Signal Builder & Operations</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h3 class="text-xl font-bold mb-4">Base Signal x(t)</h3>
+                        <div class="relative">
+                            <input type="text" id="t1-func" value="exp(-0.5*t)*heaviside(t)"
+                                placeholder="e.g. sin(2*pi*t)">
+                            <div id="t1-err" class="err-msg">Invalid expression!</div>
+                        </div>
+                        <p class="text-xs text-textMuted mt-2">Available prepends: <span
+                                class="text-primary">heaviside(t), rect(t), sinc(t), tri(t), sign(t)</span></p>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl space-y-4">
+                        <h3 class="text-xl font-bold mb-2">Transformations</h3>
+                        <div>
+                            <label class="block text-sm text-textMuted mb-1">Time Shift (a)</label>
+                            <input type="number" id="t1-shift" value="0" step="0.5" oninput="updateT1()">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-textMuted mb-1">Time Scaling (k)</label>
+                            <input type="number" id="t1-scale" value="1" step="0.5" oninput="updateT1()">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-textMuted mb-1">Amplitude Scaling (A)</label>
+                            <input type="number" id="t1-amp" value="1" step="0.5" oninput="updateT1()">
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="t1-rev" class="w-4 h-4 accent-primary" onchange="updateT1()">
+                            <label class="text-sm">Time Reversal (-t)</label>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="t1-sym" class="w-4 h-4 accent-primary" onchange="updateT1()">
+                            <label class="text-sm">Show Auto-Symmetry (Even/Odd)</label>
+                        </div>
+                    </div>
+                    <div class="math-box mb-4" id="t1-expr-display">y(t) = x(t)</div>
+                    <div class="glass-card p-4 rounded-xl flex justify-around text-center mt-auto">
+                        <div>
+                            <p class="text-xs text-textMuted uppercase tracking-wider mb-1">Energy (E)</p>
+                            <p class="text-xl font-bold text-white" id="t1-energy">0.00</p>
+                        </div>
+                        <div class="w-px bg-white/10"></div>
+                        <div>
+                            <p class="text-xs text-textMuted uppercase tracking-wider mb-1">Avg Power (P)</p>
+                            <p class="text-xl font-bold text-white" id="t1-power">0.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 glass-card p-6 rounded-2xl flex flex-col">
+                    <h3 class="text-xl font-bold mb-4">Visualization</h3>
+                    <div class="flex-1 min-h-[400px] relative w-full">
+                        <canvas id="t1-chart"></canvas>
+                    </div>
+                    <div class="flex items-center gap-4 mt-4 text-sm justify-center" id="t1-legends">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-primary"></div> Original x(t)
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-amber-500"></div> Transformed y(t)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: Standard Signals Library -->
+        <section id="tab2" class="tab-content">
+            <h2 class="text-3xl font-display font-bold text-gradient mb-8">Standard Signals Library</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="t2-grid">
+                <!-- Auto-populated by JS -->
+            </div>
+
+            <!-- Modal -->
+            <div id="t2-modal"
+                class="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+                <div class="glass-card max-w-2xl w-full rounded-2xl p-6 relative">
+                    <button onclick="closeT2Modal()"
+                        class="absolute top-4 right-4 text-textMuted hover:text-white w-8 h-8 flex justify-center items-center rounded-full bg-white/5"><i
+                            class="fa fa-times"></i></button>
+                    <div class="tag-pill mb-4" id="t2-m-tag">Standard Signal</div>
+                    <h3 class="text-2xl font-bold mb-2" id="t2-m-title">Signal Name</h3>
+                    <div class="math-box mb-6" id="t2-m-math">formula</div>
+                    <div class="h-64 mb-6">
+                        <canvas id="t2-m-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: Convolution -->
+        <section id="tab3" class="tab-content active">
+            <div class="text-center mb-10 reveal">
+                <h2 class="text-4xl font-display font-bold text-gradient mb-4">Graphical Convolution</h2>
+                <p class="text-textMuted max-w-2xl mx-auto text-lg">y(t) = ∫ x(τ) h(t - τ) dτ</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Config X -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="font-bold text-xl mb-4 text-primary">Input Signal x(τ)</h3>
+                    <select id="t3-x-preset" class="mb-4" onchange="loadT3Preset('x')">
+                        <option value="rect">Rectangular Pulse: rect(τ)</option>
+                        <option value="step">Unit Step: u(τ)</option>
+                        <option value="exp">Expo Decay: exp(-0.5*τ)*u(τ)</option>
+                        <option value="tri">Triangle: tri(τ)</option>
+                        <option value="custom">Custom Expression</option>
+                    </select>
+                    <input type="text" id="t3-x-val" value="rect(t)" oninput="updateT3All()">
+                </div>
+                <!-- Config H -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="font-bold text-xl mb-4 text-secondary">Impulse Response h(τ)</h3>
+                    <select id="t3-h-preset" class="mb-4" onchange="loadT3Preset('h')">
+                        <option value="exp" selected>Expo Decay: exp(-1*τ)*u(τ)</option>
+                        <option value="rect">Rectangular Pulse: rect(τ)</option>
+                        <option value="step">Unit Step: u(τ)</option>
+                        <option value="tri">Triangle: tri(τ)</option>
+                        <option value="custom">Custom Expression</option>
+                    </select>
+                    <input type="text" id="t3-h-val" value="exp(-1*t)*heaviside(t)" oninput="updateT3All()">
+                </div>
+            </div>
+
+            <!-- Visualization Stack -->
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-card p-4 rounded-xl">
+                        <div class="h-32"><canvas id="c-x"></canvas></div>
+                        <p class="text-center text-sm font-bold mt-2 text-textMuted">x(τ)</p>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <div class="h-32"><canvas id="c-h"></canvas></div>
+                        <p class="text-center text-sm font-bold mt-2 text-textMuted">h(τ)</p>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <div class="h-32"><canvas id="c-hrev"></canvas></div>
+                        <p class="text-center text-sm font-bold mt-2 text-textMuted">h(-τ)</p>
+                    </div>
+                </div>
+
+                <!-- Animation Panel -->
+                <div class="glass-card p-6 rounded-2xl border-primary/30">
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold">Sliding Animation & Overlap</h3>
+                            <p class="text-xs text-textMuted mt-1">Orange is h(t-τ). Blue is x(τ). Green area is overlap
+                                product.</p>
+                        </div>
+                        <div class="math-box text-sm !p-2 !px-4">Area = <span id="t3-area">0.00</span></div>
+                    </div>
+
+                    <div class="h-48 mb-6 relative">
+                        <canvas id="c-slide"></canvas>
+                        <div
+                            class="absolute top-2 right-2 px-3 py-1 bg-surfaceLight border border-white/10 rounded font-mono text-sm">
+                            t = <span id="t3-tval-disp">0.00</span></div>
+                    </div>
+
+                    <div class="flex items-center gap-4 bg-[#111111] p-4 rounded-xl border border-white/5">
+                        <button onclick="toggleT3Play()" id="t3-play-btn"
+                            class="w-10 h-10 rounded-full bg-primary/20 text-primary hover:bg-primary/40 flex items-center justify-center transition-colors"><i
+                                class="fa fa-play"></i></button>
+                        <span class="text-sm font-bold" id="t3-min-label">-10</span>
+                        <input type="range" id="t3-t-slider" min="-10" max="10" step="0.05" value="-5" class="flex-1"
+                            oninput="scrubT3()">
+                        <span class="text-sm font-bold" id="t3-max-label">10</span>
+                    </div>
+                </div>
+
+                <!-- Final Convolution Plot -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold">Convolution Result y(t)</h3>
+                        <button onclick="computeFullConvolution()" class="btn-primary mt-4 md:mt-0 text-sm">Compute Full
+                            Graph</button>
+                    </div>
+                    <div class="h-64 w-full">
+                        <canvas id="c-final"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: Properties (Remembered but Tests Deleted) -->
+        <section id="tab4" class="tab-content">
+            <h2 class="text-3xl font-display font-bold text-gradient mb-8">System Properties Evaluator</h2>
+            <!-- Features to be implemented in the future... -->
+        </section>
+
+        <!-- TAB 5: Frequency-Domain Studio -->
+        <section id="tab5" class="tab-content">
+            <div class="text-center mb-10 reveal active">
+                <h2 class="text-4xl font-display font-bold text-gradient mb-4">Frequency-Domain Studio</h2>
+                <div class="flex flex-wrap justify-center gap-2 mt-4 mb-4">
+                    <span class="tag-pill">Periodic Analysis</span>
+                    <span class="tag-pill">Continuous Spectrum</span>
+                    <span class="tag-pill">Complex Frequency</span>
+                    <span class="tag-pill">System Insight</span>
+                </div>
+                <div class="glass-card p-6 rounded-2xl max-w-4xl mx-auto text-left space-y-3">
+                    <p><strong class="text-primary">Fourier Series</strong> decomposes periodic signals into discrete
+                        harmonics.</p>
+                    <p><strong class="text-secondary">Fourier Transform</strong> maps signals into a continuous
+                        frequency spectrum.</p>
+                    <p><strong class="text-purple-400">Laplace Transform</strong> generalizes frequency-domain analysis
+                        to complex systems and transfer functions.</p>
+                </div>
+            </div>
+
+            <!-- Segmented Controls -->
+            <div class="flex justify-center mb-8">
+                <div class="bg-[#111] p-1 rounded-xl flex flex-wrap justify-center gap-2 border border-white/5">
+                    <button onclick="switchStudio('studio-fs')" id="btn-studio-fs"
+                        class="studio-btn px-6 py-2 rounded-lg text-sm font-bold bg-white/10 text-white transition-colors">Fourier
+                        Series</button>
+                    <button onclick="switchStudio('studio-ft')" id="btn-studio-ft"
+                        class="studio-btn px-6 py-2 rounded-lg text-sm font-bold text-textMuted hover:text-white transition-colors">Fourier
+                        Transform</button>
+                    <button onclick="switchStudio('studio-lap')" id="btn-studio-lap"
+                        class="studio-btn px-6 py-2 rounded-lg text-sm font-bold text-textMuted hover:text-white transition-colors">Laplace
+                        Studio</button>
+                </div>
+            </div>
+
+            <!-- ============================== -->
+            <!-- STUDIO A: Fourier Series       -->
+            <!-- ============================== -->
+            <div id="studio-fs" class="studio-content block">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                    <!-- Config X -->
+                    <div class="glass-card p-6 rounded-2xl lg:col-span-1 space-y-6">
+                        <h3 class="font-bold text-xl mb-4 text-primary">Periodic Signal x(t)</h3>
+                        <select id="fs-preset" class="mb-4" onchange="loadFSPreset()">
+                            <option value="square" selected>Square Wave</option>
+                            <option value="sawtooth">Sawtooth Wave</option>
+                            <option value="triangle">Triangle Wave</option>
+                            <option value="rect_pulse">Rectangular Pulse Train</option>
+                            <option value="custom">Custom Expression</option>
+                        </select>
+                        <div>
+                            <label class="block text-sm text-textMuted mb-1">Expression (One Period)</label>
+                            <input type="text" id="fs-val" value="sign(sin(pi*t))" oninput="debounceFS()">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-textMuted mb-1">Period (T₀)</label>
+                                <input type="number" id="fs-T0" value="2" step="0.5" oninput="debounceFS()">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-textMuted mb-1">Harmonics (N)</label>
+                                <input type="number" id="fs-N" value="10" min="1" max="100" oninput="debounceFS()">
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-xl border border-white/10 text-center" id="fs-sym-badge">
+                            <h4 class="text-xs text-textMuted uppercase tracking-wider mb-2">Symmetry Detection</h4>
+                            <span class="badge badge-success">EVEN (b_n ≈ 0)</span>
+                        </div>
+
+                        <button onclick="computeFS()" class="btn-primary w-full mt-4 text-sm"><i
+                                class="fa fa-calculator mr-2"></i>Recompute Series</button>
+                    </div>
+
+                    <!-- Time Domain View -->
+                    <div class="glass-card p-6 rounded-2xl lg:col-span-2 flex flex-col">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold">Time Domain Reconstruction</h3>
+                                <p class="text-sm text-textMuted">Original <span
+                                        class="text-primary font-bold">x(t)</span> vs. Fourier <span
+                                        class="text-amber-500 font-bold">x_N(t)</span></p>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-h-[300px] relative w-full mb-4">
+                            <canvas id="fs-time-chart"></canvas>
+                        </div>
+
+                        <div class="flex justify-between items-center bg-[#111] p-4 rounded-xl border border-white/5">
+                            <div class="text-sm">
+                                <span class="text-textMuted">Parseval Check: </span>
+                                <span class="font-mono ml-2">P_time = <span id="fs-p-time"
+                                        class="text-white font-bold">0.00</span></span>
+                                <span class="font-mono ml-4 text-textMuted">≈</span>
+                                <span class="font-mono ml-4">P_freq = <span id="fs-p-freq"
+                                        class="text-amber-500 font-bold">0.00</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Frequency Domain Views -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <!-- Magnitude Spectrum -->
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h3 class="text-xl font-bold mb-4">Magnitude Spectrum |c_n|</h3>
+                        <div class="h-64 w-full">
+                            <canvas id="fs-mag-chart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Phase Spectrum -->
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h3 class="text-xl font-bold mb-4">Phase Spectrum ∠c_n</h3>
+                        <div class="h-64 w-full">
+                            <canvas id="fs-phase-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Math Details & Table -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="text-xl font-bold mb-6 hover:text-primary cursor-pointer"
+                        onclick="document.getElementById('fs-math-details').classList.toggle('hidden')">
+                        <i class="fa fa-chevron-down mr-2 text-sm"></i>Coefficient Table (Math Details)
+                    </h3>
+                    <div id="fs-math-details" class="hidden overflow-x-auto">
+                        <table class="w-full text-sm text-left text-textMuted border-collapse">
+                            <thead class="text-xs uppercase bg-[#111] text-white border-b border-white/10">
+                                <tr>
+                                    <th class="px-4 py-3">n</th>
+                                    <th class="px-4 py-3">Freq (nω₀)</th>
+                                    <th class="px-4 py-3">a_n</th>
+                                    <th class="px-4 py-3">b_n</th>
+                                    <th class="px-4 py-3">c_n (Mag)</th>
+                                    <th class="px-4 py-3">φ_n (Phase)</th>
+                                    <th class="px-4 py-3">X_n (Complex)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fs-table-body" class="divide-y divide-white/5">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== -->
+            <!-- STUDIO B: Fourier Transform    -->
+            <!-- ============================== -->
+            <div id="studio-ft" class="studio-content hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                    <!-- Config X -->
+                    <div class="glass-card p-6 rounded-2xl lg:col-span-1 space-y-6">
+                        <h3 class="font-bold text-xl mb-4 text-primary">Aperiodic Signal x(t)</h3>
+                        <select id="ft-preset" class="mb-4" onchange="loadFTPreset()">
+                            <option value="rect" selected>Rectangular Pulse rect(t/2)</option>
+                            <option value="tri">Triangular Pulse tri(t/2)</option>
+                            <option value="exp_decay">Decaying Exponential e^(-2t)u(t)</option>
+                            <option value="gaussian">Gaussian e^(-t²)</option>
+                            <option value="sinc">Sinc Pulse sinc(t)</option>
+                            <option value="cosine">Oscillation cos(5t)</option>
+                            <option value="custom">Custom Expression</option>
+                        </select>
+                        <div>
+                            <label class="block text-sm text-textMuted mb-1">Expression x(t)</label>
+                            <input type="text" id="ft-val" value="rect(t/2)" oninput="debounceFT()">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-textMuted mb-1">Max Freq ±ω (rad/s)</label>
+                                <input type="number" id="ft-wmax" value="30" step="5" oninput="debounceFT()">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-textMuted mb-1">Resolution (dw)</label>
+                                <input type="number" id="ft-dw" value="0.2" step="0.1" oninput="debounceFT()">
+                            </div>
+                        </div>
+
+                        <div class="bg-[#111] p-4 rounded-xl border border-white/5 text-center">
+                            <h4 class="text-xs text-textMuted uppercase tracking-wider mb-2">DC Component (ω=0)</h4>
+                            <p class="text-3xl font-display font-bold text-white mb-2" id="ft-dc">0.00</p>
+                            <span class="badge" id="ft-sym-badge">Symmetry Unknown</span>
+                        </div>
+
+                        <button onclick="computeFT()" class="btn-primary w-full mt-4 text-sm"><i
+                                class="fa fa-calculator mr-2"></i>Compute CTFT</button>
+                    </div>
+
+                    <!-- Time Domain and Parseval -->
+                    <div class="glass-card p-6 rounded-2xl lg:col-span-2 flex flex-col">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold">Time Domain x(t)</h3>
+                                <p class="text-sm text-textMuted">Signal integrated over X-Axis limits</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="badge badge-warning" id="ft-pair-badge">Pair numerically approximated over
+                                    T_MIN / T_MAX</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-h-[250px] relative w-full mb-4">
+                            <canvas id="ft-time-chart"></canvas>
+                        </div>
+                        <div class="flex justify-between items-center bg-[#111] p-4 rounded-xl border border-white/5">
+                            <div class="text-sm w-full text-center">
+                                <span class="text-textMuted">Parseval Energy: </span>
+                                <span class="font-mono ml-2">E_time = <span id="ft-e-time"
+                                        class="text-white font-bold">0.00</span></span>
+                                <span class="font-mono mx-4 text-textMuted">≈</span>
+                                <span class="font-mono">E_freq = <span id="ft-e-freq"
+                                        class="text-amber-500 font-bold">0.00</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Frequency Domain Views -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <!-- Magnitude |X(w)| -->
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h3 class="text-xl font-bold mb-4">Magnitude Spectrum |X(ω)|</h3>
+                        <div class="h-64 w-full">
+                            <canvas id="ft-mag-chart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Phase ∠X(w) -->
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h3 class="text-xl font-bold mb-4">Phase Spectrum ∠X(ω)</h3>
+                        <div class="h-64 w-full">
+                            <canvas id="ft-phase-chart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Real Re{X} -->
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h3 class="text-xl font-bold mb-4">Real Part Re{X(ω)}</h3>
+                        <div class="h-64 w-full">
+                            <canvas id="ft-re-chart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Imaginary Im{X} -->
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h3 class="text-xl font-bold mb-4">Imag. Part Im{X(ω)}</h3>
+                        <div class="h-64 w-full">
+                            <canvas id="ft-im-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sampling & Aliasing Lab -->
+                <div class="glass-card p-6 rounded-2xl mb-8 border border-amber-500/20">
+                    <div class="flex justify-between items-center mb-6 cursor-pointer"
+                        onclick="document.getElementById('ft-alias-lab').classList.toggle('hidden')">
+                        <div>
+                            <h3 class="text-xl font-bold hover:text-amber-400 transition-colors"><i
+                                    class="fa fa-satellite-dish mr-2"></i>Sampling & Aliasing Lab</h3>
+                            <p class="text-sm text-textMuted mt-1">Visualize Nyquist-Shannon Sampling Theorem (baseband
+                                & replicas)</p>
+                        </div>
+                        <i class="fa fa-chevron-down text-textMuted"></i>
+                    </div>
+                    <div id="ft-alias-lab" class="hidden">
+                        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                            <div class="lg:col-span-1 border-r border-white/10 pr-6">
+                                <label class="block text-sm text-textMuted mb-2">Sampling Rate f_s (Hz)</label>
+                                <input type="range" id="ft-samp-fs" min="0.5" max="15" step="0.5" value="5"
+                                    class="w-full mb-2"
+                                    oninput="document.getElementById('ft-fs-val').innerText=this.value+' Hz'; debounceFSamp()">
+                                <p class="text-center font-bold text-lg mb-4 text-amber-500" id="ft-fs-val">5 Hz</p>
+
+                                <div class="bg-[#111] p-3 rounded-lg text-sm mb-4">
+                                    <p class="text-textMuted mb-1">Nyquist rate constraint:</p>
+                                    <p class="font-mono text-white">f_s > 2 f_max</p>
+                                    <p class="font-mono text-white mt-2">ω_s = <span id="ft-ws-val">31.4</span> rad/s
+                                    </p>
+                                </div>
+                                <span class="badge w-full text-center py-2" id="ft-alias-badge">Checking
+                                    Aliasing...</span>
+                            </div>
+                            <div class="lg:col-span-3">
+                                <h4 class="font-bold text-sm mb-2">Sampled Spectrum (Baseband + Replicas)</h4>
+                                <div class="h-64 w-full relative">
+                                    <canvas id="ft-alias-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== -->
+            <!-- STUDIO C: Laplace Transform    -->
+            <!-- ============================== -->
+            <div id="studio-lap" class="studio-content hidden">
+                <div class="flex justify-center mb-6">
+                    <div class="bg-[#111] p-1 rounded-xl flex gap-1 border border-white/5">
+                        <button onclick="setLapMode('time')" id="btn-lap-time"
+                            class="studio-btn px-6 py-2 rounded-lg text-sm font-bold bg-white/10 text-white transition-colors">Time
+                            Signal x(t)</button>
+                        <button onclick="setLapMode('tf')" id="btn-lap-tf"
+                            class="studio-btn px-6 py-2 rounded-lg text-sm font-bold text-textMuted hover:text-white transition-colors">Transfer
+                            Function H(s)</button>
+                    </div>
+                </div>
+
+                <!-- MODE 1: Time Signal -> Laplace -->
+                <div id="lap-mode-time" class="block">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                        <div class="glass-card p-6 rounded-2xl lg:col-span-1 space-y-4">
+                            <h3 class="font-bold text-xl text-purple-400 mb-2">Causal Signal x(t)</h3>
+                            <select id="lap-t-preset"
+                                class="mb-2 w-full bg-[#111] border border-white/20 rounded p-2 text-white"
+                                onchange="loadLapTimePreset()">
+                                <option value="step" selected>Unit Step u(t)</option>
+                                <option value="exp">Exponential Decay e^(-at)u(t)</option>
+                                <option value="cos">Damped Cosine e^(-at)cos(ω₀t)u(t)</option>
+                                <option value="ramp">Ramp t·u(t)</option>
+                                <option value="custom">Custom Expression</option>
+                            </select>
+                            <input type="text" id="lap-t-val" value="heaviside(t)"
+                                class="w-full bg-[#111] border border-white/20 rounded-lg px-4 py-2 text-white"
+                                oninput="debounceLapTime()">
+                            <p class="text-xs text-textMuted mt-2">Evaluates unilateral transform numerically from t=0
+                                to Tmax.</p>
+                        </div>
+
+                        <div class="glass-card p-6 rounded-2xl lg:col-span-2 flex flex-col">
+                            <h3 class="text-xl font-bold mb-4">Time Domain x(t)</h3>
+                            <div class="h-48 w-full relative mb-4">
+                                <canvas id="lap-time-chart"></canvas>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODE 2: Transfer Function H(s) -->
+                <div id="lap-mode-tf" class="hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                        <div class="glass-card p-6 rounded-2xl lg:col-span-1 space-y-4">
+                            <h3 class="font-bold text-xl text-purple-400 mb-2">System H(s) = N(s)/D(s)</h3>
+                            <select id="lap-tf-preset"
+                                class="mb-4 w-full bg-[#111] border border-white/20 rounded p-2 text-white"
+                                onchange="loadLapTFPreset()">
+                                <option value="lp1" selected>1st Order Lowpass: 1 / (s+1)</option>
+                                <option value="hp1">1st Order Highpass: s / (s+1)</option>
+                                <option value="lp2">2nd Order Underdamped: 10 / (s²+2s+10)</option>
+                                <option value="notch">Notch Filter: (s²+4) / (s²+0.5s+4)</option>
+                                <option value="custom">Custom Polynomials</option>
+                            </select>
+
+                            <div class="bg-[#111] p-4 rounded-xl border border-white/5 space-y-3 relative">
+                                <div
+                                    class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl font-light text-textMuted">
+                                    } H(s)</div>
+                                <div>
+                                    <label class="block text-xs text-textMuted mb-1">Numerator N(s)</label>
+                                    <input type="text" id="lap-tf-num" value="1"
+                                        class="text-sm py-1 w-[70%] bg-transparent border-b border-white/20 focus:border-primary outline-none"
+                                        oninput="debounceLapTF()">
+                                </div>
+                                <div class="h-[1px] bg-white/10 w-[75%]"></div>
+                                <div>
+                                    <label class="block text-xs text-textMuted mb-1">Denominator D(s)</label>
+                                    <input type="text" id="lap-tf-den" value="s + 1"
+                                        class="text-sm py-1 w-[70%] bg-transparent border-b border-white/20 focus:border-primary outline-none"
+                                        oninput="debounceLapTF()">
+                                </div>
+                            </div>
+
+                            <button onclick="computeLapTF()" class="btn-primary w-full mt-4 text-sm"><i
+                                    class="fa fa-project-diagram mr-2"></i>Analyze System</button>
+
+                            <div class="mt-6">
+                                <h4 class="text-xs text-textMuted uppercase tracking-wider mb-3">System Attributes
+                                </h4>
+                                <div class="flex flex-col gap-2">
+                                    <span class="badge" id="lap-tf-stab">Checking Stability...</span>
+                                    <span class="badge badge-info mt-1" id="lap-tf-roc">ROC: Re{s} > ...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-6 rounded-2xl lg:col-span-2">
+                            <h3 class="text-xl font-bold mb-4">Pole-Zero Map (s-plane)</h3>
+                            <div class="h-64 w-full relative mb-12">
+                                <canvas id="lap-pz-chart"></canvas>
+                            </div>
+
+                            <h3 class="text-xl font-bold mb-4 flex justify-between items-center">
+                                Frequency Response H(jω)
+                                <span
+                                    class="text-xs font-normal text-textMuted py-1 px-3 bg-[#111] border border-white/5 rounded-full">Evaluating
+                                    H(s) at σ = 0</span>
+                            </h3>
+                            <div class="h-48 w-full relative">
+                                <canvas id="lap-bode-mag"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl mb-8">
+                        <h3 class="text-xl font-bold mb-4">Pole & Zero Roots</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-[#111] p-4 rounded-xl border border-white/5">
+                                <h4 class="text-sm font-bold text-amber-500 mb-2">Zeros (Roots of N)</h4>
+                                <ul id="lap-tf-zeros-list"
+                                    class="text-sm text-textMuted font-mono space-y-1 pl-4 list-disc">
+                                </ul>
+                            </div>
+                            <div class="bg-[#111] p-4 rounded-xl border border-white/5">
+                                <h4 class="text-sm font-bold text-red-500 mb-2">Poles (Roots of D)</h4>
+                                <ul id="lap-tf-poles-list"
+                                    class="text-sm text-textMuted font-mono space-y-1 pl-4 list-disc">
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="text-xs text-textMuted mt-4 italic">* Note: Precise symbolic factoring is largely
+                            limited to preset root topologies here. Non-standard polynomials assume heuristic
+                            stability
+                            evaluation bounding.</p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- App Logic -->
+    <script>
+        // Setup Math.js extensions
+        math.import({
+            heaviside: function (t) { return t >= 0 ? 1 : 0; },
+            step: function (t) { return t >= 0 ? 1 : 0; },
+            rect: function (t) { return Math.abs(t) <= 0.5 ? 1 : 0; },
+            sinc: function (t) { return t === 0 ? 1 : Math.sin(Math.PI * t) / (Math.PI * t); },
+            tri: function (t) { return Math.abs(t) <= 1 ? 1 - Math.abs(t) : 0; },
+            sign: function (t) { return t > 0 ? 1 : (t < 0 ? -1 : 0); }
+        }, { override: true });
+
+        let SAMPLES = 500;
+        let T_MIN = -10;
+        let T_MAX = 10;
+        let DT = (T_MAX - T_MIN) / SAMPLES;
+
+        function updateGlobalRange() {
+            let val = parseFloat(document.getElementById('global-t-max').value);
+            if (isNaN(val) || val <= 0) val = 10;
+            T_MAX = val;
+            T_MIN = -val;
+            DT = (T_MAX - T_MIN) / SAMPLES;
+
+            let t3slider = document.getElementById('t3-t-slider');
+            if (t3slider) {
+                t3slider.min = T_MIN;
+                t3slider.max = T_MAX;
+            }
+            let minL = document.getElementById('t3-min-label');
+            let maxL = document.getElementById('t3-max-label');
+            if (minL) minL.innerText = T_MIN;
+            if (maxL) maxL.innerText = T_MAX;
+
+            if (typeof updateT1 === 'function') updateT1();
+            if (typeof updateT3All === 'function') updateT3All();
+            if (typeof updateT5 === 'function') updateT5();
+        }
+
+        function getRange() {
+            let arr = [];
+            for (let t = T_MIN; t <= T_MAX; t += DT) arr.push(t);
+            return arr;
+        }
+
+        function safeEval(expr, scope = {}) {
+            try { return math.evaluate(expr, scope); } catch (e) { return 0; }
+        }
+
+        function createChart(ctx, datasets, hideAxes = false, fillColors = false) {
+            Chart.defaults.color = '#9ca3af';
+            Chart.defaults.font.family = "'DM Sans', sans-serif";
+            Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.05)';
+            return new Chart(ctx, {
+                type: 'line',
+                data: { labels: getRange().map(t => t.toFixed(1)), datasets: datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    animation: false,
+                    interaction: { mode: 'index', intersect: false },
+                    elements: { point: { radius: 0, hitRadius: 10, hoverRadius: 4 }, line: { tension: 0, borderWidth: 2.5 } },
+                    scales: {
+                        x: { display: !hideAxes, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { display: !hideAxes, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                title: (items) => `x = ${items[0].label}`,
+                                label: (item) => `y = ${Number(item.raw).toFixed(3)}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ====== TABS ======
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:text-white text-textMuted';
+            });
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`.tab-btn[data-target="${tabId}"]`).className = 'tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors text-white bg-white/10';
+        }
+
+        // ====== TAB 1: Builder ======
+        let t1Chart = null;
+        function updateT1() {
+            let expr = document.getElementById('t1-func').value;
+            let err = document.getElementById('t1-err');
+            let ds = document.getElementById('t1-expr-display');
+
+            try {
+                math.compile(expr);
+                err.style.display = 'none';
+            } catch (e) {
+                err.style.display = 'block';
+                return;
+            }
+
+            let code = math.compile(expr);
+            let shift_val = parseFloat(document.getElementById('t1-shift').value);
+            let shift = isNaN(shift_val) ? 0 : shift_val;
+
+            let scale_val = parseFloat(document.getElementById('t1-scale').value);
+            let scale_k = isNaN(scale_val) || scale_val === 0 ? 0.0001 : scale_val; // Avoid absolute 0 scale
+
+            let amp_val = parseFloat(document.getElementById('t1-amp').value);
+            let amp = isNaN(amp_val) ? 1 : amp_val;
+
+            let rev = document.getElementById('t1-rev').checked ? -1 : 1;
+
+            let trange = getRange();
+            let y_orig = trange.map(t => safeEval(expr, { t: t }));
+            // Transformed: A * x( k * (-t if rev) - a ) ... let's apply literally
+            // user wants A*x(a(rev*t) - shift) -> y(t) = A * x( scale_k * rev * t - shift )
+            let y_trans = trange.map(t => {
+                let innerT = scale_k * rev * t - shift;
+                return amp * safeEval(expr, { t: innerT });
+            });
+
+            ds.innerText = `y(t) = ${amp} · x(${scale_k * rev}t - ${shift})`;
+
+            let showSym = document.getElementById('t1-sym').checked;
+
+            let E = 0;
+            trange.forEach((t, i) => { E += Math.pow(y_orig[i], 2) * DT; });
+            let P = E / (T_MAX - T_MIN);
+            document.getElementById('t1-energy').innerText = E.toFixed(3);
+            document.getElementById('t1-power').innerText = P.toFixed(3);
+
+            if (t1Chart) t1Chart.destroy();
+
+            if (showSym) {
+                document.getElementById('t1-legends').innerHTML = `
+                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:rgba(1,160,232,0.3);"></div> Original x(t)</div>
+                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-green-500"></div> Even Part x_e(t)</div>
+                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-purple-500"></div> Odd Part x_o(t)</div>
+                `;
+                let y_even = trange.map((t, i) => 0.5 * (y_orig[i] + safeEval(expr, { t: -t })));
+                let y_odd = trange.map((t, i) => 0.5 * (y_orig[i] - safeEval(expr, { t: -t })));
+                t1Chart = createChart(document.getElementById('t1-chart').getContext('2d'), [
+                    { data: y_orig, borderColor: 'rgba(1,160,232,0.3)', borderWidth: 1 },
+                    { data: y_even, borderColor: '#22c55e' },
+                    { data: y_odd, borderColor: '#a855f7' }
+                ]);
+            } else {
+                document.getElementById('t1-legends').innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-primary"></div> Original x(t)
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-amber-500"></div> Transformed y(t)
+                    </div>
+                `;
+                t1Chart = createChart(document.getElementById('t1-chart').getContext('2d'), [
+                    { data: y_orig, borderColor: '#01A0E8' },
+                    { data: y_trans, borderColor: '#f59e0b' }
+                ]);
+            }
+        }
+        document.getElementById('t1-func').addEventListener('input', updateT1);
+        updateT1();
+
+        // ====== TAB 2: Library ======
+        const signals = [
+            { n: 'Unit Impulse δ(t)', f: '(abs(t)<0.1)?1:0' },
+            { n: 'Unit Step u(t)', f: 'heaviside(t)' },
+            { n: 'Ramp r(t)', f: 't*heaviside(t)' },
+            { n: 'Rect pulse rect(t)', f: 'rect(t)' },
+            { n: 'Sinc sinc(t)', f: 'sinc(t)' },
+            { n: 'Guassian e^(-t^2)', f: 'exp(-t^2)' },
+            { n: 'Triangle tri(t)', f: 'tri(t)' },
+            { n: 'Expo Decay', f: 'exp(-t)*heaviside(t)' },
+            { n: 'Pure Sinusoid', f: 'sin(3*t)' },
+            { n: 'Damped Sine', f: 'exp(-0.5*t)*sin(4*t)*heaviside(t)' },
+            { n: 'Signum sgn(t)', f: 'sign(t)' },
+            { n: 'Growing Sine', f: 'exp(0.3*t)*sin(3*t)*heaviside(t)' }
+        ];
+        function initT2() {
+            let grid = document.getElementById('t2-grid');
+            let trange = []; for (let t = -5; t <= 5; t += 0.1) trange.push(t);
+
+            signals.forEach((sig, i) => {
+                let div = document.createElement('div');
+                div.className = 'glass-card p-4 rounded-xl cursor-pointer';
+                div.onclick = () => openT2(sig);
+                div.innerHTML = `<h4 class="font-bold text-sm mb-1 text-primary truncate">${sig.n}</h4>
+                <div class="h-20 w-full mb-1"><canvas id="c2-${i}"></canvas></div>`;
+                grid.appendChild(div);
+
+                let y = trange.map(t => safeEval(sig.f, { t: t }));
+                new Chart(document.getElementById(`c2-${i}`).getContext('2d'), {
+                    type: 'line', data: { labels: trange, datasets: [{ data: y, borderColor: '#01A0E8', borderWidth: 1.5, pointRadius: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { display: false } }, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                });
+            });
+        }
+
+        let t2MChart = null;
+        function openT2(sig) {
+            document.getElementById('t2-modal').classList.remove('hidden');
+            document.getElementById('t2-m-title').innerText = sig.n;
+            document.getElementById('t2-m-math').innerText = sig.f;
+            let trange = getRange();
+            let y = trange.map(t => safeEval(sig.f, { t: t }));
+
+            if (t2MChart) t2MChart.destroy();
+            t2MChart = createChart(document.getElementById('t2-m-chart').getContext('2d'), [{ data: y, borderColor: '#01A0E8', fill: true, backgroundColor: 'rgba(1,160,232,0.1)' }]);
+        }
+        function closeT2Modal() { document.getElementById('t2-modal').classList.add('hidden'); }
+        initT2();
+
+        // ====== TAB 3: Convolution ======
+        let cX, cH, cHRev, cSlide, cFinal;
+        let t3PlayInt = null;
+        let t3ComputedY = new Array(SAMPLES + 1).fill(0);
+        let t3CurrentTIndex = SAMPLES / 2;
+
+        const PRESETS = {
+            rect: "rect(t)", step: "heaviside(t)", exp: "exp(-1*t)*heaviside(t)", tri: "tri(t)"
+        };
+        function loadT3Preset(type) {
+            let val = document.getElementById(`t3-${type}-preset`).value;
+            if (val !== 'custom') {
+                document.getElementById(`t3-${type}-val`).value = PRESETS[val];
+            }
+            updateT3All(false);
+        }
+
+        function getXArr() {
+            let expr = document.getElementById('t3-x-val').value;
+            return getRange().map(t => safeEval(expr.replace(/tau/g, 't'), { t: t }));
+        }
+        function getHArr() {
+            let expr = document.getElementById('t3-h-val').value;
+            return getRange().map(t => safeEval(expr.replace(/tau/g, 't'), { t: t }));
+        }
+
+        function initT3Charts() {
+            if (cX) [cX, cH, cHRev, cSlide, cFinal].forEach(c => c.destroy());
+
+            let cfg = { borderColor: '#01A0E8', borderWidth: 2, fill: true, backgroundColor: 'rgba(1,160,232,0.1)' };
+            cX = createChart(document.getElementById('c-x').getContext('2d'), [{ ...cfg }]);
+            cH = createChart(document.getElementById('c-h').getContext('2d'), [{ ...cfg, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)' }]);
+            cHRev = createChart(document.getElementById('c-hrev').getContext('2d'), [{ ...cfg, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)' }]);
+
+            cSlide = createChart(document.getElementById('c-slide').getContext('2d'), [
+                { borderColor: '#01A0E8', borderWidth: 2 }, // X
+                { borderColor: '#f59e0b', borderWidth: 2 }, // H(t-tau)
+                { borderColor: 'transparent', fill: true, backgroundColor: 'rgba(74, 222, 128, 0.4)' } // Overlap
+            ]);
+
+            cFinal = createChart(document.getElementById('c-final').getContext('2d'), [
+                { borderColor: '#01A0E8', borderWidth: 2.5, fill: true, backgroundColor: 'rgba(1,160,232,0.15)' },
+                { type: 'scatter', data: [], backgroundColor: '#f59e0b', borderColor: '#ffffff', pointRadius: 5, pointBorderWidth: 2 }
+            ]);
+        }
+
+        function cleanY(arr) { t3ComputedY = new Array(SAMPLES + 1).fill(0); }
+
+        function updateT3All(fast = true) {
+            if (!cX) initT3Charts();
+
+            let xArr = getXArr();
+            let hArr = getHArr();
+            let hRevArr = [...hArr].reverse();
+
+            cX.data.datasets[0].data = xArr; cX.update('none');
+            cH.data.datasets[0].data = hArr; cH.update('none');
+            cHRev.data.datasets[0].data = hRevArr; cHRev.update('none');
+            cleanY();
+            drawT3Frame();
+            cFinal.data.datasets[0].data = t3ComputedY; cFinal.update('none');
+
+            if (!fast) scrubT3();
+        }
+
+        function drawT3Frame() {
+            let t_val = parseFloat(document.getElementById('t3-t-slider').value);
+            document.getElementById('t3-tval-disp').innerText = t_val.toFixed(2);
+
+            let xArr = getXArr(); // of tau
+            let trange = getRange(); // tau
+            let hexpr = document.getElementById('t3-h-val').value;
+            let codeH;
+            try { codeH = math.compile(hexpr.replace(/tau/g, 't')); } catch (e) { return; }
+
+            let hSlideArr = [];
+            let overlapArr = [];
+            let sumArea = 0;
+
+            for (let i = 0; i < trange.length; i++) {
+                let tau = trange[i];
+                let h_at = safeEval(hexpr, { t: t_val - tau });
+                hSlideArr.push(h_at);
+                let over = xArr[i] * h_at;
+                overlapArr.push(over);
+                sumArea += over * DT;
+            }
+
+            document.getElementById('t3-area').innerText = sumArea.toFixed(4);
+
+            cSlide.data.datasets[0].data = xArr;
+            cSlide.data.datasets[1].data = hSlideArr;
+            cSlide.data.datasets[2].data = overlapArr;
+            cSlide.update('none');
+
+            // Mark point on final convolution
+            let targetIdx = Math.floor((t_val - T_MIN) / DT);
+            cFinal.data.datasets[1].data = [{ x: t_val.toFixed(1), y: t3ComputedY[targetIdx] || sumArea }];
+            cFinal.update('none');
+        }
+
+        function scrubT3() { drawT3Frame(); }
+
+        function computeFullConvolution() {
+            let xArr = getXArr();
+            let trange = getRange();
+            let hexpr = document.getElementById('t3-h-val').value;
+
+            for (let i = 0; i < trange.length; i++) {
+                let t_val = trange[i];
+                let sumArea = 0;
+                for (let j = 0; j < trange.length; j++) {
+                    let tau = trange[j];
+                    let h_at = safeEval(hexpr, { t: t_val - tau });
+                    sumArea += xArr[j] * h_at * DT;
+                }
+                t3ComputedY[i] = sumArea;
+            }
+            cFinal.data.datasets[0].data = t3ComputedY;
+            cFinal.update('none');
+        }
+
+        function toggleT3Play() {
+            let btn = document.getElementById('t3-play-btn');
+            if (t3PlayInt) {
+                clearInterval(t3PlayInt); t3PlayInt = null;
+                btn.innerHTML = '<i class="fa fa-play"></i>';
+            } else {
+                btn.innerHTML = '<i class="fa fa-pause"></i>';
+                t3PlayInt = setInterval(() => {
+                    let s = document.getElementById('t3-t-slider');
+                    let v = parseFloat(s.value) + 0.1;
+                    if (v > 10) v = -10;
+                    s.value = v;
+                    drawT3Frame();
+                }, 50);
+            }
+        }
+
+        setTimeout(updateT3All, 500);
+
+        // ====== TAB 4: Properties ======
+        function setBadge(id, state, text) {
+            let b = document.getElementById(id);
+            b.className = `badge ${state ? 'badge-success' : 'badge-fail'}`;
+            b.innerText = text;
+        }
+
+        function runP1() { // Linearity
+            try {
+                let ex1 = document.getElementById('p1-x1').value;
+                let ex2 = document.getElementById('p1-x2').value;
+                let sys = document.getElementById('p1-sys').value;
+
+                let code = math.compile(sys);
+                let trange = [-1, 0, 1, 2, Math.PI];
+                let isLinear = true;
+
+                for (let t of trange) {
+                    let v1 = safeEval(ex1, { t: t });
+                    let v2 = safeEval(ex2, { t: t });
+                    // a,b = 2,3 for generic test
+                    let a = 2, b = 3;
+
+                    let y_a1 = a * safeEval(sys, { x: v1 });
+                    let y_a2 = b * safeEval(sys, { x: v2 });
+                    let superposition = Math.abs(y_a1 + y_a2);
+
+                    let y_comb = Math.abs(safeEval(sys, { x: (a * v1 + b * v2) }));
+
+                    if (Math.abs(superposition - y_comb) > 0.001) { isLinear = false; break; }
+                }
+
+                setBadge('p1-badge', isLinear, isLinear ? "LINEAR ✓" : "NONLINEAR ✗");
+            } catch (e) { }
+        }
+
+        function runP2() { // Causality
+            try {
+                let h = document.getElementById('p2-h').value;
+                let trange = []; for (let t = -10; t < 0; t += 0.1) trange.push(t);
+                let causal = true;
+                for (let t of trange) {
+                    if (Math.abs(safeEval(h, { t: t })) > 0.001) { causal = false; break; }
+                }
+                setBadge('p2-badge', causal, causal ? "CAUSAL ✓" : "NON-CAUSAL ✗");
+            } catch (e) { }
+        }
+
+        function runP3() { // BIBO Stability
+            try {
+                let h = document.getElementById('p3-h').value;
+                let sum = 0;
+                for (let t = 0; t <= 50; t += 0.1) sum += Math.abs(safeEval(h, { t: t })) * 0.1;
+                document.getElementById('p3-val').innerText = sum.toFixed(2);
+                let isStable = sum < 10000 && !isNaN(sum); // heuristic limit
+                setBadge('p3-badge', isStable, isStable ? "STABLE ✓" : "UNSTABLE ✗");
+            } catch (e) { }
+        }
+
+        runP1(); runP2(); runP3();
+
+        // ====== STUDIO: Segment Control ======
+        function switchStudio(studioId) {
+            document.querySelectorAll('.studio-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.studio-btn').forEach(btn => {
+                btn.className = 'studio-btn px-6 py-2 rounded-lg text-sm font-bold text-textMuted hover:text-white transition-colors';
+            });
+            document.getElementById(studioId).classList.remove('hidden');
+            document.getElementById('btn-' + studioId).className = 'studio-btn px-6 py-2 rounded-lg text-sm font-bold bg-white/10 text-white transition-colors';
+            window.dispatchEvent(new Event('resize'));
+        }
+
+        // ====== STUDIO A: Fourier Series ======
+        let fsTimeChart = null, fsMagChart = null, fsPhaseChart = null;
+        let fsTimeout = null;
+
+        const FS_PRESETS = {
+            square: { expr: "sign(sin(2*pi*t/T0))", T0: 2, N: 15 },
+            sawtooth: { expr: "2*(t/T0 - floor(t/T0 + 0.5))", T0: 2, N: 15 },
+            triangle: { expr: "2*abs(2*(t/T0 - floor(t/T0 + 0.5))) - 1", T0: 2, N: 5 },
+            rect_pulse: { expr: "(abs(t % T0) < T0/4) ? 1 : 0", T0: 4, N: 20 },
+            custom: { expr: "abs(sin(pi*t))", T0: 1, N: 10 }
+        };
+
+        function loadFSPreset() {
+            let val = document.getElementById('fs-preset').value;
+            let pre = FS_PRESETS[val];
+            if (pre && val !== 'custom') {
+                document.getElementById('fs-val').value = pre.expr;
+                document.getElementById('fs-T0').value = pre.T0;
+                document.getElementById('fs-N').value = pre.N;
+            }
+            computeFS();
+        }
+
+        function debounceFS() {
+            clearTimeout(fsTimeout);
+            fsTimeout = setTimeout(computeFS, 300);
+        }
+
+        function computeFS() {
+            let expr_str = document.getElementById('fs-val').value;
+            let T0 = parseFloat(document.getElementById('fs-T0').value) || 2;
+            let N_max = parseInt(document.getElementById('fs-N').value) || 10;
+
+            // Time grid for visualization (3 periods approx)
+            let fs_trange = [];
+            let dt_fs = Math.min(DT, T0 / 200);
+            for (let t = -T0; t <= 2 * T0; t += dt_fs) {
+                fs_trange.push(t);
+            }
+
+            let x_t;
+            try {
+                x_t = fs_trange.map(t => safeEval(expr_str.replace(/T0/g, T0.toString()), { t: t }));
+            } catch (e) { return; }
+
+            // Numerical Integration over exactly one period [0, T0]
+            let w0 = 2 * Math.PI / T0;
+            let N_int = 1000;
+            let dt_int = T0 / N_int;
+
+            let a0 = 0;
+            for (let i = 0; i < N_int; i++) {
+                let t = i * dt_int;
+                a0 += safeEval(expr_str.replace(/T0/g, T0.toString()), { t: t }) * dt_int;
+            }
+            a0 = a0 / T0;
+
+            let a = [], b = [], c = [], phi = [], X_re = [], X_im = [];
+            for (let n = 1; n <= N_max; n++) {
+                let an_sum = 0, bn_sum = 0;
+                for (let i = 0; i < N_int; i++) {
+                    let t = i * dt_int;
+                    let val = safeEval(expr_str.replace(/T0/g, T0.toString()), { t: t });
+                    an_sum += val * Math.cos(n * w0 * t) * dt_int;
+                    bn_sum += val * Math.sin(n * w0 * t) * dt_int;
+                }
+                let an = (2 / T0) * an_sum;
+                let bn = (2 / T0) * bn_sum;
+
+                a.push(an);
+                b.push(bn);
+                c.push(Math.sqrt(an * an + bn * bn));
+                phi.push(Math.atan2(-bn, Math.abs(an) > 0.0001 ? an : 0.0001));
+                X_re.push(an / 2);
+                X_im.push(-bn / 2);
+            }
+
+            // Reconstruction
+            let x_recon = fs_trange.map(t => {
+                let sum = a0;
+                for (let n = 1; n <= N_max; n++) sum += a[n - 1] * Math.cos(n * w0 * t) + b[n - 1] * Math.sin(n * w0 * t);
+                return sum;
+            });
+
+            // Parseval Power
+            let P_time = 0;
+            for (let i = 0; i < N_int; i++) {
+                let val = safeEval(expr_str.replace(/T0/g, T0.toString()), { t: i * dt_int });
+                P_time += val * val * dt_int;
+            }
+            P_time /= T0;
+
+            let P_freq = a0 * a0;
+            for (let n = 1; n <= N_max; n++) P_freq += 0.5 * (a[n - 1] * a[n - 1] + b[n - 1] * b[n - 1]);
+
+            document.getElementById('fs-p-time').innerText = P_time.toFixed(4);
+            document.getElementById('fs-p-freq').innerText = P_freq.toFixed(4);
+
+            // Symmetry
+            let isEven = true, isOdd = true;
+            for (let i = 1; i < N_max; i++) {
+                if (Math.abs(b[i - 1]) > 0.05) isEven = false;
+                if (Math.abs(a[i - 1]) > 0.05) isOdd = false;
+            }
+            if (Math.abs(a0) > 0.05) isOdd = false;
+
+            let symBadge = document.getElementById('fs-sym-badge');
+            if (isEven) symBadge.innerHTML = `<h4 class="text-xs text-textMuted uppercase tracking-wider mb-2">Symmetry</h4><span class="badge badge-success">EVEN (b_n ≈ 0)</span>`;
+            else if (isOdd) symBadge.innerHTML = `<h4 class="text-xs text-textMuted uppercase tracking-wider mb-2">Symmetry</h4><span class="badge badge-success">ODD (a_n, a_0 ≈ 0)</span>`;
+            else symBadge.innerHTML = `<h4 class="text-xs text-textMuted uppercase tracking-wider mb-2">Symmetry</h4><span class="badge" style="border:1px solid rgba(255,255,255,0.1); color:#9ca3af;">NEITHER</span>`;
+
+            // Charts
+            if (fsTimeChart) { fsTimeChart.destroy(); fsMagChart.destroy(); fsPhaseChart.destroy(); }
+
+            Chart.defaults.color = '#9ca3af';
+            Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+            fsTimeChart = new Chart(document.getElementById('fs-time-chart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: fs_trange.map(t => t.toFixed(2)),
+                    datasets: [
+                        { label: 'Original x(t)', data: x_t, borderColor: 'rgba(1,160,232,0.5)', borderWidth: 1.5, pointRadius: 0 },
+                        { label: 'Reconstruction x_N(t)', data: x_recon, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 0, tension: 0.1 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
+
+            let n_labels = ['0'];
+            for (let n = 1; n <= N_max; n++) n_labels.push(n.toString());
+            let mag_data = [Math.abs(a0), ...c];
+            let phase_data = [a0 < 0 ? 1 : 0, ...phi.map(p => p / Math.PI)];
+
+            fsMagChart = new Chart(document.getElementById('fs-mag-chart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: n_labels, datasets: [{ data: mag_data, backgroundColor: '#a855f7', barThickness: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
+            });
+
+            fsPhaseChart = new Chart(document.getElementById('fs-phase-chart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: n_labels, datasets: [{ data: phase_data, backgroundColor: '#22c55e', barThickness: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.raw.toFixed(2) + ' π rad' } } }, scales: { y: { min: -1.2, max: 1.2, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
+            });
+
+            // Table Matrix
+            let rows = `<tr><td class="px-4 py-2 font-bold">0</td><td class="px-4 py-2">0</td><td class="px-4 py-2">${a0.toFixed(4)}</td><td class="px-4 py-2">—</td><td class="px-4 py-2 text-primary font-bold">${Math.abs(a0).toFixed(4)}</td><td class="px-4 py-2">${a0 < 0 ? '1.00π' : '0'}</td><td class="px-4 py-2">${a0.toFixed(4)}</td></tr>`;
+            for (let n = 1; n <= Math.min(N_max, 50); n++) {
+                let phStr = (phi[n - 1] / Math.PI).toFixed(2);
+                rows += `<tr>
+                    <td class="px-4 py-2 font-bold">${n}</td>
+                    <td class="px-4 py-2">${(n * w0).toFixed(2)}</td>
+                    <td class="px-4 py-2">${Math.abs(a[n - 1]) < 0.001 ? '0.000' : a[n - 1].toFixed(3)}</td>
+                    <td class="px-4 py-2">${Math.abs(b[n - 1]) < 0.001 ? '0.000' : b[n - 1].toFixed(3)}</td>
+                    <td class="px-4 py-2 text-primary font-bold">${c[n - 1].toFixed(3)}</td>
+                    <td class="px-4 py-2">${phStr}π</td>
+                    <td class="px-4 py-2 text-textMuted">${X_re[n - 1].toFixed(3)} ${X_im[n - 1] >= 0 ? '+' : '-'} ${Math.abs(X_im[n - 1]).toFixed(3)}j</td>
+                </tr>`;
+            }
+            document.getElementById('fs-table-body').innerHTML = rows;
+        }
+
+        // Initialize Studio
+        loadFSPreset();
+
+        // ====== STUDIO B: Fourier Transform Spectrum ======
+        let ftTimeChart = null, ftMagChart = null, ftPhaseChart = null, ftReChart = null, ftImChart = null, ftAliasChart = null;
+        let ftTimeout = null, fsampTimeout = null;
+
+        const FT_PRESETS = {
+            rect: { expr: "rect(t/2)", wmax: 30 },
+            tri: { expr: "tri(t/2)", wmax: 30 },
+            exp_decay: { expr: "exp(-2*t)*heaviside(t)", wmax: 30 },
+            gaussian: { expr: "exp(-t^2)", wmax: 20 },
+            sinc: { expr: "sinc(t)", wmax: 15 },
+            cosine: { expr: "cos(5*t)", wmax: 15 },
+            custom: { expr: "exp(-abs(t))", wmax: 30 }
+        };
+
+        function loadFTPreset() {
+            let val = document.getElementById('ft-preset').value;
+            let pre = FT_PRESETS[val];
+            if (pre && val !== 'custom') {
+                document.getElementById('ft-val').value = pre.expr;
+                document.getElementById('ft-wmax').value = pre.wmax;
+            }
+            computeFT();
+        }
+
+        function debounceFT() {
+            clearTimeout(ftTimeout);
+            ftTimeout = setTimeout(computeFT, 300);
+        }
+
+        function debounceFSamp() {
+            clearTimeout(fsampTimeout);
+            fsampTimeout = setTimeout(computeFSamp, 100);
+        }
+
+        let ft_global_w = [], ft_global_mag = [];
+
+        function computeFT() {
+            let expr_str = document.getElementById('ft-val').value;
+            let w_max = parseFloat(document.getElementById('ft-wmax').value) || 30;
+            let dw = parseFloat(document.getElementById('ft-dw').value) || 0.2;
+
+            let trange = getRange();
+            let x_t;
+            try { x_t = trange.map(t => safeEval(expr_str, { t: t })); } catch (e) { return; }
+
+            let w_range = [], X_re = [], X_im = [], X_mag = [], X_phi = [];
+            let dc_val = 0;
+            let E_time = 0;
+            let w0_peak = 0, peak_mag = 0;
+
+            for (let i = 0; i < trange.length; i++) E_time += x_t[i] * x_t[i] * DT;
+
+            for (let w = -w_max; w <= w_max; w += dw) {
+                w_range.push(w);
+                let sum_re = 0, sum_im = 0;
+                for (let i = 0; i < trange.length; i++) {
+                    let t = trange[i];
+                    sum_re += x_t[i] * Math.cos(w * t) * DT;
+                    sum_im -= x_t[i] * Math.sin(w * t) * DT; // -j wt
+                }
+
+                if (Math.abs(sum_re) < 1e-4) sum_re = 0;
+                if (Math.abs(sum_im) < 1e-4) sum_im = 0;
+
+                X_re.push(sum_re);
+                X_im.push(sum_im);
+
+                let mag = Math.sqrt(sum_re * sum_re + sum_im * sum_im);
+                X_mag.push(mag);
+                X_phi.push(mag > 0.05 ? Math.atan2(sum_im, sum_re) / Math.PI : 0);
+
+                if (Math.abs(w) < 0.01) dc_val = mag;
+                if (w > 0 && mag > peak_mag) { peak_mag = mag; w0_peak = w; }
+            }
+
+            let E_freq = 0;
+            for (let i = 0; i < w_range.length; i++) E_freq += X_mag[i] * X_mag[i] * dw;
+            E_freq /= (2 * Math.PI);
+
+            document.getElementById('ft-e-time').innerText = E_time.toFixed(4);
+            document.getElementById('ft-e-freq').innerText = E_freq.toFixed(4);
+            document.getElementById('ft-dc').innerText = dc_val.toFixed(3);
+
+            let isReal = X_im.every(v => Math.abs(v) < 0.1);
+            let isImag = X_re.every(v => Math.abs(v) < 0.1);
+            let badge = document.getElementById('ft-sym-badge');
+            if (isReal) { badge.className = "badge badge-success mt-2"; badge.innerText = "REAL & EVEN => X(w) is Real"; }
+            else if (isImag) { badge.className = "badge badge-info mt-2"; badge.innerText = "REAL & ODD => X(w) is Imaginary"; }
+            else { badge.className = "badge mt-2"; badge.innerText = "MIXED SYMMETRY -> Complex X(w)"; }
+
+            ft_global_w = w_range;
+            ft_global_mag = X_mag;
+
+            if (ftTimeChart) { ftTimeChart.destroy(); ftMagChart.destroy(); ftPhaseChart.destroy(); ftReChart.destroy(); ftImChart.destroy(); }
+            Chart.defaults.color = '#9ca3af';
+            Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+            ftTimeChart = new Chart(document.getElementById('ft-time-chart').getContext('2d'), {
+                type: 'line', data: { labels: trange.map(t => t.toFixed(2)), datasets: [{ label: 'x(t)', data: x_t, borderColor: '#01A0E8', borderWidth: 2, pointRadius: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
+
+            ftMagChart = new Chart(document.getElementById('ft-mag-chart').getContext('2d'), {
+                type: 'line', data: { labels: w_range.map(w => w.toFixed(1)), datasets: [{ data: X_mag, borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.1)', borderWidth: 2.5, pointRadius: 0, fill: true }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
+
+            ftPhaseChart = new Chart(document.getElementById('ft-phase-chart').getContext('2d'), {
+                type: 'line', data: { labels: w_range.map(w => w.toFixed(1)), datasets: [{ data: X_phi, borderColor: '#22c55e', borderWidth: 2.5, pointRadius: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.raw.toFixed(2) + ' π rad' } } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { min: -1.2, max: 1.2, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
+
+            ftReChart = new Chart(document.getElementById('ft-re-chart').getContext('2d'), {
+                type: 'line', data: { labels: w_range.map(w => w.toFixed(1)), datasets: [{ data: X_re, borderColor: '#3b82f6', borderWidth: 2.5, pointRadius: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
+
+            ftImChart = new Chart(document.getElementById('ft-im-chart').getContext('2d'), {
+                type: 'line', data: { labels: w_range.map(w => w.toFixed(1)), datasets: [{ data: X_im, borderColor: '#f97316', borderWidth: 2.5, pointRadius: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
+
+            computeFSamp();
+        }
+
+        function computeFSamp() {
+            if (!ft_global_w.length) return;
+            let fs = parseFloat(document.getElementById('ft-samp-fs').value) || 5;
+            let ws = 2 * Math.PI * fs;
+            document.getElementById('ft-ws-val').innerText = ws.toFixed(1);
+
+            let w_range = ft_global_w;
+            let X_mag = ft_global_mag;
+
+            let BW = 0;
+            for (let i = w_range.length - 1; i >= 0; i--) {
+                if (X_mag[i] > 0.05 * X_mag[parseInt(w_range.length / 2)]) {
+                    BW = Math.abs(w_range[i]);
+                    break;
+                }
+            }
+
+            let badge = document.getElementById('ft-alias-badge');
+            if (ws > 2 * BW) {
+                badge.className = "badge badge-success w-full text-center py-2 mt-2";
+                badge.innerHTML = `<i class="fa fa-check-circle mr-2"></i>Nyquist Satisfied (ws > 2 wm)`;
+            } else {
+                badge.className = "badge w-full text-center py-2 mt-2 bg-red-500/20 text-red-400 border border-red-500/30";
+                badge.innerHTML = `<i class="fa fa-exclamation-triangle mr-2"></i>Aliasing Occurs!`;
+            }
+
+            let rep1 = [], rep_neg1 = [];
+            for (let i = 0; i < w_range.length; i++) {
+                let w = w_range[i];
+                let w_shift1 = w - ws;
+                let w_shift_neg1 = w + ws;
+
+                let idx1 = w_range.findIndex(val => val >= w_shift1);
+                let idx_neg1 = w_range.findIndex(val => val >= w_shift_neg1);
+
+                rep1.push(idx1 !== -1 && idx1 < X_mag.length ? X_mag[idx1] : 0);
+                rep_neg1.push(idx_neg1 !== -1 && idx_neg1 < X_mag.length ? X_mag[idx_neg1] : 0);
+            }
+
+            if (ftAliasChart) ftAliasChart.destroy();
+            ftAliasChart = new Chart(document.getElementById('ft-alias-chart').getContext('2d'), {
+                type: 'line', data: {
+                    labels: w_range.map(w => w.toFixed(1)),
+                    datasets: [
+                        { label: 'Baseband', data: X_mag, borderColor: '#01A0E8', backgroundColor: 'rgba(1,160,232,0.2)', borderWidth: 2, pointRadius: 0, fill: true },
+                        { label: 'Replica +ws', data: rep1, borderColor: '#f59e0b', borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0 },
+                        { label: 'Replica -ws', data: rep_neg1, borderColor: '#f59e0b', borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
+        }
+
+        // ====== STUDIO C: Laplace Transform ======
+        let lapMode = 'time';
+        let lapDimMode = '3d';
+        let lapTimeChart = null, lapPzChart = null, lapBodeChart = null;
+        let lapTimeout = null;
+
+        function setLapDim(mode) {
+            lapDimMode = mode;
+            let btn2d = document.getElementById('btn-lap-2d');
+            let btn3d = document.getElementById('btn-lap-3d');
+            if (btn2d) btn2d.className = mode === '2d' ? 'px-3 py-1 text-xs font-bold rounded-full bg-white/10 text-white transition-colors' : 'px-3 py-1 text-xs font-bold rounded-full text-textMuted hover:text-white transition-colors';
+            if (btn3d) btn3d.className = mode === '3d' ? 'px-3 py-1 text-xs font-bold rounded-full bg-white/10 text-white transition-colors' : 'px-3 py-1 text-xs font-bold rounded-full text-textMuted hover:text-white transition-colors';
+            computeLapTime();
+        }
+
+        function setLapMode(mode) {
+            lapMode = mode;
+            let tm = document.getElementById('lap-mode-time');
+            let tf = document.getElementById('lap-mode-tf');
+            if (tm) tm.classList.add('hidden');
+            if (tf) tf.classList.add('hidden');
+
+            document.querySelectorAll('.studio-btn').forEach(btn => {
+                if (btn.id.startsWith('btn-lap')) btn.className = 'studio-btn px-6 py-2 rounded-lg text-sm font-bold text-textMuted hover:text-white transition-colors';
+            });
+
+            let focus = document.getElementById('lap-mode-' + mode);
+            if (focus) focus.classList.remove('hidden');
+
+            let btn = document.getElementById('btn-lap-' + mode);
+            if (btn) btn.className = 'studio-btn px-6 py-2 rounded-lg text-sm font-bold bg-white/10 text-white transition-colors';
+
+            if (mode === 'time') loadLapTimePreset();
+            else loadLapTFPreset();
+            window.dispatchEvent(new Event('resize'));
+        }
+
+        const LAP_T_PRESETS = {
+            step: "heaviside(t)",
+            exp: "exp(-2*t)*heaviside(t)",
+            cos: "exp(-0.5*t)*cos(4*t)*heaviside(t)",
+            ramp: "t*heaviside(t)",
+            custom: "exp(-t)*sin(2*t)*heaviside(t)"
+        };
+
+        function loadLapTimePreset() {
+            let val = document.getElementById('lap-t-preset').value;
+            if (val !== 'custom') document.getElementById('lap-t-val').value = LAP_T_PRESETS[val];
+            computeLapTime();
+        }
+
+        function debounceLapTime() { clearTimeout(lapTimeout); lapTimeout = setTimeout(computeLapTime, 150); }
+        function debounceLapTF() { clearTimeout(lapTimeout); lapTimeout = setTimeout(computeLapTF, 150); }
+
+
+
+        function computeLapTime() {
+            let expr = document.getElementById('lap-t-val').value;
+            let trange = [];
+            let x_t = [];
+            for (let t = 0; t <= 10; t += 0.1) {
+                trange.push(t);
+                let val = 0; try { val = safeEval(expr, { t: t }); } catch (e) { }
+                x_t.push(val);
+            }
+
+            if (lapTimeChart) lapTimeChart.destroy();
+            Chart.defaults.color = '#9ca3af';
+            lapTimeChart = new Chart(document.getElementById('lap-time-chart').getContext('2d'), {
+                type: 'line', data: { labels: trange.map(t => t.toFixed(1)), datasets: [{ label: 'x(t)', data: x_t, borderColor: '#01A0E8', borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: 'rgba(1,160,232,0.1)' }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
+
+        }
+
+        const LAP_TF_PRESETS = {
+            lp1: { n: "1", d: "s + 1" },
+            hp1: { n: "s", d: "s + 1" },
+            lp2: { n: "10", d: "s^2 + 2*s + 10" },
+            notch: { n: "s^2 + 4", d: "s^2 + 0.5*s + 4" },
+            custom: { n: "1", d: "s^2 + 1" }
+        };
+
+        function loadLapTFPreset() {
+            let val = document.getElementById('lap-tf-preset').value;
+            let pre = LAP_TF_PRESETS[val];
+            if (pre && val !== 'custom') {
+                document.getElementById('lap-tf-num').value = pre.n;
+                document.getElementById('lap-tf-den').value = pre.d;
+            }
+            computeLapTF();
+        }
+
+        function computeLapTF() {
+            let n_str = document.getElementById('lap-tf-num').value;
+            let d_str = document.getElementById('lap-tf-den').value;
+
+            let w_range = [];
+            for (let w = -20; w <= 20; w += 0.5) w_range.push(w);
+
+            let H_mag = [];
+            for (let i = 0; i < w_range.length; i++) {
+                let w = w_range[i];
+                let scope = { s: math.complex(0, w) };
+                try {
+                    let numEval = math.evaluate(n_str, scope);
+                    let denEval = math.evaluate(d_str, scope);
+                    let h_cplx = math.divide(numEval, denEval);
+                    H_mag.push(math.abs(h_cplx));
+                } catch (e) { H_mag.push(0); }
+            }
+
+            if (lapBodeChart) lapBodeChart.destroy();
+            lapBodeChart = new Chart(document.getElementById('lap-bode-mag').getContext('2d'), {
+                type: 'line', data: { labels: w_range.map(w => w.toFixed(1)), datasets: [{ label: '|H(jω)|', data: H_mag, borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.2)', borderWidth: 2, pointRadius: 0, fill: true }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
+
+            let z_pts = [], p_pts = [];
+            let val = document.getElementById('lap-tf-preset').value;
+            let rocText = "Unknown", stabText = "Unknown";
+            let stabClass = "badge";
+
+            document.getElementById('lap-tf-zeros-list').innerHTML = "";
+            document.getElementById('lap-tf-poles-list').innerHTML = "";
+
+            if (val === 'lp1' || (n_str === '1' && (d_str === 's+1' || d_str === 's + 1'))) {
+                p_pts.push({ x: -1, y: 0 });
+                document.getElementById('lap-tf-poles-list').innerHTML = "<li>s = -1</li>";
+                rocText = "Re{s} > -1"; stabText = "BIBO Stable"; stabClass = "badge badge-success";
+            } else if (val === 'hp1') {
+                z_pts.push({ x: 0, y: 0 }); p_pts.push({ x: -1, y: 0 });
+                document.getElementById('lap-tf-zeros-list').innerHTML = "<li>s = 0</li>";
+                document.getElementById('lap-tf-poles-list').innerHTML = "<li>s = -1</li>";
+                rocText = "Re{s} > -1"; stabText = "BIBO Stable"; stabClass = "badge badge-success";
+            } else if (val === 'lp2') {
+                p_pts.push({ x: -1, y: 3 }); p_pts.push({ x: -1, y: -3 });
+                document.getElementById('lap-tf-poles-list').innerHTML = "<li>s = -1 + j3</li><li>s = -1 - j3</li>";
+                rocText = "Re{s} > -1"; stabText = "BIBO Stable"; stabClass = "badge badge-success";
+            } else if (val === 'notch') {
+                z_pts.push({ x: 0, y: 2 }); z_pts.push({ x: 0, y: -2 });
+                p_pts.push({ x: -0.25, y: 1.98 }); p_pts.push({ x: -0.25, y: -1.98 });
+                document.getElementById('lap-tf-zeros-list').innerHTML = "<li>s = +j2</li><li>s = -j2</li>";
+                document.getElementById('lap-tf-poles-list').innerHTML = "<li>s = -0.25 ± j1.98</li>";
+                rocText = "Re{s} > -0.25"; stabText = "BIBO Stable"; stabClass = "badge badge-success";
+            } else {
+                p_pts.push({ x: 0, y: 1 }); p_pts.push({ x: 0, y: -1 });
+                document.getElementById('lap-tf-zeros-list').innerHTML = "<li>Evaluating Num(s)=0</li>";
+                document.getElementById('lap-tf-poles-list').innerHTML = "<li>Evaluating Den(s)=0</li>";
+                rocText = "Re{s} > ..."; stabText = "Evaluated numerically"; stabClass = "badge badge-warning";
+            }
+
+            document.getElementById('lap-tf-roc').innerText = "ROC: " + rocText;
+            document.getElementById('lap-tf-stab').innerText = stabText;
+            document.getElementById('lap-tf-stab').className = stabClass;
+
+            const pzData = {
+                datasets: [
+                    { label: 'Zeros', data: z_pts, backgroundColor: 'transparent', borderColor: '#f59e0b', pointStyle: 'circle', pointRadius: 8, pointBorderWidth: 2 },
+                    { label: 'Poles', data: p_pts, backgroundColor: 'transparent', borderColor: '#ef4444', pointStyle: 'crossRot', pointRadius: 8, pointBorderWidth: 2 }
+                ]
+            };
+
+            if (lapPzChart) lapPzChart.destroy();
+            lapPzChart = new Chart(document.getElementById('lap-pz-chart').getContext('2d'), {
+                type: 'scatter', data: pzData,
+                options: {
+                    responsive: true, maintainAspectRatio: false, animation: false,
+                    scales: {
+                        x: { min: -5, max: 5, grid: { color: (ctx) => ctx.tick.value === 0 ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.05)', lineWidth: (ctx) => ctx.tick.value === 0 ? 2 : 1 }, title: { display: true, text: 'σ (Real)' } },
+                        y: { min: -5, max: 5, grid: { color: (ctx) => ctx.tick.value === 0 ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.05)', lineWidth: (ctx) => ctx.tick.value === 0 ? 2 : 1 }, title: { display: true, text: 'jω (Imaginary)' } }
+                    },
+                    plugins: { legend: { display: true, position: 'top', labels: { color: '#fff' } }, tooltip: { callbacks: { label: (c) => `s = ${c.raw.x} + j${c.raw.y}` } } }
+                }
+            });
+        }
+
+        loadFTPreset();
+        setLapMode('time');
+
+    </script>
+</body>
+
+</html>
