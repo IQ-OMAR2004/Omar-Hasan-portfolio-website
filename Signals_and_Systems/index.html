@@ -1534,15 +1534,19 @@
                     sum_im -= x_t[i] * Math.sin(w * t) * DT; // -j wt
                 }
 
-                if (Math.abs(sum_re) < 1e-4) sum_re = 0;
-                if (Math.abs(sum_im) < 1e-4) sum_im = 0;
-
                 X_re.push(sum_re);
                 X_im.push(sum_im);
 
                 let mag = Math.sqrt(sum_re * sum_re + sum_im * sum_im);
                 X_mag.push(mag);
-                X_phi.push(mag > 0.05 ? Math.atan2(sum_im, sum_re) / Math.PI : 0);
+
+                let phase_val = 0;
+                if (mag > 1e-10) {
+                    phase_val = Math.atan2(sum_im, sum_re) / Math.PI;
+                } else if (X_phi.length > 0) {
+                    phase_val = X_phi[X_phi.length - 1]; // carry over previous phase at exact nulls
+                }
+                X_phi.push(phase_val);
 
                 if (Math.abs(w) < 0.01) dc_val = mag;
                 if (w > 0 && mag > peak_mag) { peak_mag = mag; w0_peak = w; }
