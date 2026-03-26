@@ -599,6 +599,15 @@
             <!-- STUDIO B: Fourier Transform    -->
             <!-- ============================== -->
             <div id="studio-ft" class="studio-content hidden">
+                <div
+                    class="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-xl flex items-start gap-4 text-sm text-textMuted max-w-4xl mx-auto">
+                    <i class="fa fa-info-circle text-primary mt-0.5"></i>
+                    <p><strong>Numerical finite-window approximation:</strong> The CTFT transforms displayed here are
+                        computed numerically over a bounded time window [-10, 10]. Idealized infinite signals like
+                        <b>cos(ω₀t)</b> or <b>sin(ω₀t)</b> will appear as tight Sinc lobes (numerical approximations)
+                        rather than mathematically perfect Dirac impulses. Phase is masked where magnitude is negligible
+                        to prevent noisy artifacts.</p>
+                </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                     <!-- Config X -->
                     <div class="glass-card p-6 rounded-2xl lg:col-span-1 space-y-6">
@@ -1525,6 +1534,14 @@
 
             for (let i = 0; i < trange.length; i++) E_time += x_t[i] * x_t[i] * DT;
 
+            // Compute exact DC value through proper integration (ω=0)
+            let dc_exact_re = 0;
+            for (let i = 0; i < trange.length; i++) {
+                dc_exact_re += x_t[i] * DT;
+            }
+            dc_val = Math.abs(dc_exact_re);
+
+            let raw_phi = [];
             for (let w = -w_max; w <= w_max; w += dw) {
                 w_range.push(w);
                 let sum_re = 0, sum_im = 0;
@@ -1539,17 +1556,21 @@
 
                 let mag = Math.sqrt(sum_re * sum_re + sum_im * sum_im);
                 X_mag.push(mag);
+                raw_phi.push(Math.atan2(sum_im, sum_re) / Math.PI);
 
-                let phase_val = 0;
-                if (mag > 1e-10) {
-                    phase_val = Math.atan2(sum_im, sum_re) / Math.PI;
-                } else if (X_phi.length > 0) {
-                    phase_val = X_phi[X_phi.length - 1]; // carry over previous phase at exact nulls
-                }
-                X_phi.push(phase_val);
-
-                if (Math.abs(w) < 0.01) dc_val = mag;
                 if (w > 0 && mag > peak_mag) { peak_mag = mag; w0_peak = w; }
+            }
+
+            // Phase masking based on peak magnitude to remove numerical noise (e.g., for cos(5t))
+            let max_mag = Math.max(...X_mag, dc_val);
+            let phase_threshold = max_mag * 0.005; // 0.5% threshold to ensure we capture peaks but drop noise
+
+            for (let i = 0; i < w_range.length; i++) {
+                if (X_mag[i] > phase_threshold) {
+                    X_phi.push(raw_phi[i]);
+                } else {
+                    X_phi.push(null); // Chart.js will gracefully break the line here
+                }
             }
 
             let E_freq = 0;
