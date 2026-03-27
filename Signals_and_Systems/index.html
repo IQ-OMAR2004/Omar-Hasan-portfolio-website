@@ -633,6 +633,7 @@
                             <div>
                                 <label class="block text-sm text-textMuted mb-1">Resolution (dw)</label>
                                 <input type="number" id="ft-dw" value="0.001" step="0.001" oninput="debounceFT()">
+                                <p class="text-xs text-textMuted mt-1">Display step: max(dw, 0.05)</p>
                             </div>
                         </div>
 
@@ -1567,7 +1568,14 @@
             // ── A/B: cleaned component arrays ────────────────────────────────────
             // peakMag drives all thresholds so they scale with the signal.
             const peakMag = Math.max(...X_mag, Math.abs(dc_exact_re));
-            const mag_threshold      = peakMag * 0.25;   // mask bins below 25 % of peak
+            // Adaptive threshold: peaky spectra (like cos) need high masking to hide
+            // window artifacts; broad spectra (rect, tri, Gaussian) need low masking
+            // to preserve physically meaningful sidelobe phase.
+            // Peakiness = peak / mean tells us which case we're in.
+            const meanMag = X_mag.reduce((a, b) => a + b, 0) / X_mag.length;
+            const peakinessRatio = peakMag / (meanMag + 1e-10);
+            const thresholdFactor = peakinessRatio > 20 ? 0.25 : 0.02;
+            const mag_threshold = peakMag * thresholdFactor;
             const comp_threshold_global = peakMag * 0.005; // global floor for each component
 
             const X_re_clean = [], X_im_clean = [];
@@ -1622,8 +1630,8 @@
             const w_disp   = w_range.filter((_, i) => i % decStep === 0);
             const mag_disp = X_mag.filter((_, i) => i % decStep === 0);
             const phi_disp = X_phi.filter((_, i) => i % decStep === 0);
-            const re_disp  = X_re_clean.filter((_, i) => i % decStep === 0);
-            const im_disp  = X_im_clean.filter((_, i) => i % decStep === 0);
+            const re_disp  = X_re_clean.filter((_, i) => i % decStep === 0);   // D: use cleaned
+            const im_disp  = X_im_clean.filter((_, i) => i % decStep === 0);   // D: use cleaned
 
             if (ftTimeChart) ftTimeChart.destroy();
             if (ftMagChart) ftMagChart.destroy();
