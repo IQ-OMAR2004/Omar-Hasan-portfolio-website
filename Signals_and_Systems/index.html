@@ -1586,9 +1586,25 @@
             }
 
             // ── C: phase from cleaned components ─────────────────────────────────
+            // First pass: mark valid bins
+            const phase_valid = X_mag.map(m => m > mag_threshold);
+
+            // Second pass: extend each valid region by ±3 bins on each side
+            // so segments look like solid bars rather than short dashes
+            const EXTEND = 3;
+            const phase_extended = [...phase_valid];
+            for (let i = 0; i < phase_valid.length; i++) {
+                if (phase_valid[i]) {
+                    for (let j = Math.max(0, i - EXTEND);
+                         j <= Math.min(phase_valid.length - 1, i + EXTEND); j++) {
+                        phase_extended[j] = true;
+                    }
+                }
+            }
+
             const X_phi = [];
             for (let i = 0; i < w_range.length; i++) {
-                if (X_mag[i] <= mag_threshold) {
+                if (!phase_extended[i]) {
                     X_phi.push(null);
                     continue;
                 }
