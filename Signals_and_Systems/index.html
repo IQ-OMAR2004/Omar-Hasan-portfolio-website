@@ -1627,11 +1627,22 @@
 
             const MAX_DISPLAY_POINTS = 2000;
             const decStep = Math.max(1, Math.floor(w_range.length / MAX_DISPLAY_POINTS));
-            const w_disp   = w_range.filter((_, i) => i % decStep === 0);
-            const mag_disp = X_mag.filter((_, i) => i % decStep === 0);
-            const phi_disp = X_phi.filter((_, i) => i % decStep === 0);
-            const re_disp  = X_re_clean.filter((_, i) => i % decStep === 0);   // D: use cleaned
-            const im_disp  = X_im_clean.filter((_, i) => i % decStep === 0);   // D: use cleaned
+            // Phase-aware decimation: always keep non-null phase points + their
+            // neighboring nulls so Chart.js can draw solid segments, not dots.
+            const w_disp = [], mag_disp = [], phi_disp = [], re_disp = [], im_disp = [];
+            let prevPhaseKept = false;
+            for (let i = 0; i < w_range.length; i++) {
+                const phaseValid = X_phi[i] !== null;
+                const keep = (i % decStep === 0) || phaseValid || prevPhaseKept;
+                if (keep) {
+                    w_disp.push(w_range[i]);
+                    mag_disp.push(X_mag[i]);
+                    phi_disp.push(X_phi[i]);
+                    re_disp.push(X_re_clean[i]);
+                    im_disp.push(X_im_clean[i]);
+                }
+                prevPhaseKept = phaseValid;
+            }
 
             if (ftTimeChart) ftTimeChart.destroy();
             if (ftMagChart) ftMagChart.destroy();
