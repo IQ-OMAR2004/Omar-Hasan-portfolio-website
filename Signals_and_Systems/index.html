@@ -1591,7 +1591,9 @@
 
             // Second pass: extend each valid region by ±3 bins on each side
             // so segments look like solid bars rather than short dashes
-            const EXTEND = 3;
+            // Peaky signals (cos/sin) already have solid peaks — no extension needed.
+            // Broad signals (rect/tri/gaussian) need extension to widen thin lobes.
+            const EXTEND = thresholdFactor > 0.1 ? 0 : 3;
             const phase_extended = [...phase_valid];
             for (let i = 0; i < phase_valid.length; i++) {
                 if (phase_valid[i]) {
