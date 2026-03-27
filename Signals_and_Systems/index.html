@@ -1522,12 +1522,16 @@
             let expr_str = document.getElementById('ft-val').value;
             let w_max = parseFloat(document.getElementById('ft-wmax').value) || 30;
             let dw = parseFloat(document.getElementById('ft-dw').value) || 0.001;
+            const dw_compute = Math.max(dw, 0.05);
 
             let trange = getRange();
+            // Symmetric time grid: t[k] = -t[N-k] exactly (sign-bit flip only), so Im=0 for any even x(t)
+            const N_ft = trange.length;
+            const t_ft = Array.from({length: N_ft}, (_, k) => (k - (N_ft - 1) / 2) * DT);
             let x_t;
-            try { x_t = trange.map(t => safeEval(expr_str, { t: t })); } catch (e) { return; }
+            try { x_t = t_ft.map(t => safeEval(expr_str, { t })); } catch (e) { return; }
 
-            let w_range = [], X_re = [], X_im = [], X_mag = [], X_phi = [];
+            let w_range = [], X_re_raw = [], X_im_raw = [], X_mag = [];
             let dc_val = 0;
             let E_time = 0;
             let w0_peak = 0, peak_mag = 0;
@@ -1541,48 +1545,70 @@
             }
             dc_val = Math.abs(dc_exact_re);
 
-            let raw_phi = [];
-            for (let w = -w_max; w <= w_max; w += dw) {
+            for (let w = -w_max; w <= w_max; w += dw_compute) {
+
                 w_range.push(w);
                 let sum_re = 0, sum_im = 0;
-                for (let i = 0; i < trange.length; i++) {
-                    let t = trange[i];
+                for (let i = 0; i < N_ft; i++) {
+                    let t = t_ft[i];
                     sum_re += x_t[i] * Math.cos(w * t) * DT;
                     sum_im -= x_t[i] * Math.sin(w * t) * DT; // -j wt
                 }
 
-                X_re.push(sum_re);
-                X_im.push(sum_im);
+                X_re_raw.push(sum_re);
+                X_im_raw.push(sum_im);
 
                 let mag = Math.sqrt(sum_re * sum_re + sum_im * sum_im);
                 X_mag.push(mag);
-                raw_phi.push(Math.atan2(sum_im, sum_re) / Math.PI);
 
                 if (w > 0 && mag > peak_mag) { peak_mag = mag; w0_peak = w; }
             }
 
-            // Phase masking based on peak magnitude to remove numerical noise (e.g., for cos(5t))
-            let max_mag = Math.max(...X_mag, dc_val);
-            let phase_threshold = max_mag * 0.005; // 0.5% threshold to ensure we capture peaks but drop noise
+            // ── A/B: cleaned component arrays ────────────────────────────────────
+            // peakMag drives all thresholds so they scale with the signal.
+            const peakMag = Math.max(...X_mag, Math.abs(dc_exact_re));
+            const mag_threshold      = peakMag * 0.25;   // mask bins below 25 % of peak
+            const comp_threshold_global = peakMag * 0.005; // global floor for each component
 
+            const X_re_clean = [], X_im_clean = [];
             for (let i = 0; i < w_range.length; i++) {
-                if (X_mag[i] > phase_threshold) {
-                    X_phi.push(raw_phi[i]);
-                } else {
-                    X_phi.push(null); // Chart.js will gracefully break the line here
-                }
+                const compTol = Math.max(comp_threshold_global, X_mag[i] * 0.02);
+                X_re_clean.push(Math.abs(X_re_raw[i]) < compTol ? 0 : X_re_raw[i]);
+                X_im_clean.push(Math.abs(X_im_raw[i]) < compTol ? 0 : X_im_raw[i]);
             }
 
+            // ── C: phase from cleaned components ─────────────────────────────────
+            const X_phi = [];
+            for (let i = 0; i < w_range.length; i++) {
+                if (X_mag[i] <= mag_threshold) {
+                    X_phi.push(null);
+                    continue;
+                }
+                const re_c = X_re_clean[i], im_c = X_im_clean[i];
+                let phi;
+                if      (im_c === 0 && re_c >  0) phi =  0;
+                else if (im_c === 0 && re_c <  0) phi =  1;   // π / π
+                else if (re_c === 0 && im_c >  0) phi =  0.5;
+                else if (re_c === 0 && im_c <  0) phi = -0.5;
+                else                               phi = Math.atan2(im_c, re_c) / Math.PI;
+                X_phi.push(phi);
+            }
+
+            // ── D/E: symmetry badge using relative threshold ──────────────────────
+            const symTol = peakMag * 0.02;
+            const maxAbsIm = Math.max(...X_im_clean.map(Math.abs));
+            const maxAbsRe = Math.max(...X_re_clean.map(Math.abs));
+            const isReal = maxAbsIm < symTol;
+            const isImag = maxAbsRe < symTol;
+
             let E_freq = 0;
-            for (let i = 0; i < w_range.length; i++) E_freq += X_mag[i] * X_mag[i] * dw;
+            for (let i = 0; i < w_range.length; i++) E_freq += X_mag[i] * X_mag[i] * dw_compute;
             E_freq /= (2 * Math.PI);
 
             document.getElementById('ft-e-time').innerText = E_time.toFixed(4);
             document.getElementById('ft-e-freq').innerText = E_freq.toFixed(4);
             document.getElementById('ft-dc').innerText = dc_val.toFixed(3);
 
-            let isReal = X_im.every(v => Math.abs(v) < 0.1);
-            let isImag = X_re.every(v => Math.abs(v) < 0.1);
             let badge = document.getElementById('ft-sym-badge');
             if (isReal) { badge.className = "badge badge-success mt-2"; badge.innerText = "REAL & EVEN => X(w) is Real"; }
             else if (isImag) { badge.className = "badge badge-info mt-2"; badge.innerText = "REAL & ODD => X(w) is Imaginary"; }
@@ -1591,7 +1617,19 @@
             ft_global_w = w_range;
             ft_global_mag = X_mag;
 
-            if (ftTimeChart) { ftTimeChart.destroy(); ftMagChart.destroy(); ftPhaseChart.destroy(); ftReChart.destroy(); ftImChart.destroy(); }
+            const MAX_DISPLAY_POINTS = 2000;
+            const decStep = Math.max(1, Math.floor(w_range.length / MAX_DISPLAY_POINTS));
+            const w_disp   = w_range.filter((_, i) => i % decStep === 0);
+            const mag_disp = X_mag.filter((_, i) => i % decStep === 0);
+            const phi_disp = X_phi.filter((_, i) => i % decStep === 0);
+            const re_disp  = X_re_clean.filter((_, i) => i % decStep === 0);
+            const im_disp  = X_im_clean.filter((_, i) => i % decStep === 0);
+
+            if (ftTimeChart) ftTimeChart.destroy();
+            if (ftMagChart) ftMagChart.destroy();
+            if (ftPhaseChart) ftPhaseChart.destroy();
+            if (ftReChart) ftReChart.destroy();
+            if (ftImChart) ftImChart.destroy();
             Chart.defaults.color = '#9ca3af';
             Chart.defaults.font.family = "'DM Sans', sans-serif";
 
@@ -1601,23 +1639,56 @@
             });
 
             ftMagChart = new Chart(document.getElementById('ft-mag-chart').getContext('2d'), {
-                type: 'line', data: { labels: w_range.map(w => w.toFixed(1)), datasets: [{ data: X_mag, borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.1)', borderWidth: 2.5, pointRadius: 0, fill: true }] },
-                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+                type: 'line', data: { labels: w_disp.map(w => w.toFixed(1)), datasets: [{ data: mag_disp, borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.1)', borderWidth: 2.5, pointRadius: 0, fill: true }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { maxTicksLimit: 13 } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
             });
 
             ftPhaseChart = new Chart(document.getElementById('ft-phase-chart').getContext('2d'), {
-                type: 'line', data: { labels: w_range.map(w => w.toFixed(1)), datasets: [{ data: X_phi, borderColor: '#22c55e', borderWidth: 2.5, pointRadius: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.raw.toFixed(2) + ' π rad' } } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { min: -1.2, max: 1.2, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+                type: 'line',
+                data: {
+                    labels: w_disp.map(w => w.toFixed(1)),
+                    datasets: [{
+                        data: phi_disp,
+                        borderColor: '#22c55e',
+                        borderWidth: 2.5,
+                        pointRadius: 0,
+                        spanGaps: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (c) => c.raw != null ? c.raw.toFixed(2) + ' π rad' : ''
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { maxTicksLimit: 13 }
+                        },
+                        y: {
+                            min: -1.2,
+                            max: 1.2,
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        }
+                    }
+                }
             });
 
             ftReChart = new Chart(document.getElementById('ft-re-chart').getContext('2d'), {
-                type: 'line', data: { labels: w_range.map(w => w.toFixed(1)), datasets: [{ data: X_re, borderColor: '#3b82f6', borderWidth: 2.5, pointRadius: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+                type: 'line', data: { labels: w_disp.map(w => w.toFixed(1)), datasets: [{ data: re_disp, borderColor: '#3b82f6', borderWidth: 2.5, pointRadius: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { maxTicksLimit: 13 } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
             });
 
             ftImChart = new Chart(document.getElementById('ft-im-chart').getContext('2d'), {
-                type: 'line', data: { labels: w_range.map(w => w.toFixed(1)), datasets: [{ data: X_im, borderColor: '#f97316', borderWidth: 2.5, pointRadius: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+                type: 'line', data: { labels: w_disp.map(w => w.toFixed(1)), datasets: [{ data: im_disp, borderColor: '#f97316', borderWidth: 2.5, pointRadius: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { maxTicksLimit: 13 } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
             });
 
             computeFSamp();
