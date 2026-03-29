@@ -606,7 +606,8 @@
                         computed numerically over a bounded time window [-10, 10]. Idealized infinite signals like
                         <b>cos(ω₀t)</b> or <b>sin(ω₀t)</b> will appear as tight Sinc lobes (numerical approximations)
                         rather than mathematically perfect Dirac impulses. Phase is masked where magnitude is negligible
-                        to prevent noisy artifacts.</p>
+                        to prevent noisy artifacts.
+                    </p>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                     <!-- Config X -->
@@ -1528,7 +1529,7 @@
             let trange = getRange();
             // Symmetric time grid: t[k] = -t[N-k] exactly (sign-bit flip only), so Im=0 for any even x(t)
             const N_ft = trange.length;
-            const t_ft = Array.from({length: N_ft}, (_, k) => (k - (N_ft - 1) / 2) * DT);
+            const t_ft = Array.from({ length: N_ft }, (_, k) => (k - (N_ft - 1) / 2) * DT);
             let x_t;
             try { x_t = t_ft.map(t => safeEval(expr_str, { t })); } catch (e) { return; }
 
@@ -1566,58 +1567,50 @@
             }
 
             // ── A/B: cleaned component arrays ────────────────────────────────────
-            // peakMag drives all thresholds so they scale with the signal.
             const peakMag = Math.max(...X_mag, Math.abs(dc_exact_re));
-            // Adaptive threshold: peaky spectra (like cos) need high masking to hide
-            // window artifacts; broad spectra (rect, tri, Gaussian) need low masking
-            // to preserve physically meaningful sidelobe phase.
-            // Peakiness = peak / mean tells us which case we're in.
-            const meanMag = X_mag.reduce((a, b) => a + b, 0) / X_mag.length;
-            const peakinessRatio = peakMag / (meanMag + 1e-10);
-            const thresholdFactor = peakinessRatio > 20 ? 0.25 : 0.02;
-            const mag_threshold = peakMag * thresholdFactor;
-            const comp_threshold_global = peakMag * 0.005; // global floor for each component
+            const noiseFloor = Math.max(1e-12, peakMag * 1e-10); // True numerical noise floor
 
             const X_re_clean = [], X_im_clean = [];
             for (let i = 0; i < w_range.length; i++) {
-                const compTol = Math.max(comp_threshold_global, X_mag[i] * 0.02);
-                X_re_clean.push(Math.abs(X_re_raw[i]) < compTol ? 0 : X_re_raw[i]);
-                X_im_clean.push(Math.abs(X_im_raw[i]) < compTol ? 0 : X_im_raw[i]);
+                X_re_clean.push(Math.abs(X_re_raw[i]) < noiseFloor ? 0 : X_re_raw[i]);
+                X_im_clean.push(Math.abs(X_im_raw[i]) < noiseFloor ? 0 : X_im_raw[i]);
             }
 
             // ── C: phase from cleaned components ─────────────────────────────────
-            // First pass: mark valid bins
+            // Mark regions where magnitude is strong enough to have valid phase
+            const mag_threshold = peakMag * 0.005;
             const phase_valid = X_mag.map(m => m > mag_threshold);
 
-            // Second pass: extend each valid region by ±3 bins on each side
-            // so segments look like solid bars rather than short dashes
-            // Peaky signals (cos/sin) already have solid peaks — no extension needed.
-            // Broad signals (rect/tri/gaussian) need extension to widen thin lobes.
-            const EXTEND = thresholdFactor > 0.1 ? 0 : 3;
-            const phase_extended = [...phase_valid];
-            for (let i = 0; i < phase_valid.length; i++) {
-                if (phase_valid[i]) {
-                    for (let j = Math.max(0, i - EXTEND);
-                         j <= Math.min(phase_valid.length - 1, i + EXTEND); j++) {
-                        phase_extended[j] = true;
-                    }
-                }
-            }
-
+            // Extract phase, preserving exact linear transitions and bridging narrow nulls
             const X_phi = [];
+            let last_valid_phi = 0;
+            const MAX_GAP = 5; // Fill narrow gaps (like zero crossings) but not wide empty bands
+
             for (let i = 0; i < w_range.length; i++) {
-                if (!phase_extended[i]) {
-                    X_phi.push(null);
-                    continue;
+                if (!phase_valid[i]) {
+                    // Check if it's a short gap
+                    let gap_end = i;
+                    while (gap_end < w_range.length && !phase_valid[gap_end]) gap_end++;
+
+                    if (gap_end - i <= MAX_GAP) {
+                        // Narrow gap: compute and connect it so Sinc phase wraps properly
+                        let re_c = X_re_clean[i], im_c = X_im_clean[i];
+                        if (re_c === 0 && im_c === 0) {
+                            X_phi.push(last_valid_phi); // Keep continuous at exact mathematical zero
+                        } else {
+                            last_valid_phi = Math.atan2(im_c, re_c) / Math.PI;
+                            X_phi.push(last_valid_phi);
+                        }
+                    } else {
+                        // Wide empty band: break the chart line
+                        X_phi.push(null);
+                        i = gap_end - 1; // skip ahead
+                    }
+                } else {
+                    let re_c = X_re_clean[i], im_c = X_im_clean[i];
+                    last_valid_phi = Math.atan2(im_c, re_c) / Math.PI;
+                    X_phi.push(last_valid_phi);
                 }
-                const re_c = X_re_clean[i], im_c = X_im_clean[i];
-                let phi;
-                if      (im_c === 0 && re_c >  0) phi =  0;
-                else if (im_c === 0 && re_c <  0) phi =  1;   // π / π
-                else if (re_c === 0 && im_c >  0) phi =  0.5;
-                else if (re_c === 0 && im_c <  0) phi = -0.5;
-                else                               phi = Math.atan2(im_c, re_c) / Math.PI;
-                X_phi.push(phi);
             }
 
             // ── D/E: symmetry badge using relative threshold ──────────────────────
