@@ -1602,9 +1602,11 @@
                             X_phi.push(last_valid_phi);
                         }
                     } else {
-                        // Wide empty band: break the chart line
-                        X_phi.push(null);
-                        i = gap_end - 1; // skip ahead
+                        // Wide empty band: break the chart line properly maintaining array length
+                        for (let j = i; j < gap_end; j++) {
+                            X_phi.push(null);
+                        }
+                        i = gap_end - 1; // skip ahead safely
                     }
                 } else {
                     let re_c = X_re_clean[i], im_c = X_im_clean[i];
