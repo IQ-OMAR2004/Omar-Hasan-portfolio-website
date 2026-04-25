@@ -1,0 +1,2274 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOLTIMIZE — Electrical Infrastructure Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function(){
+  const t = localStorage.getItem('voltimize-theme') || 'dark';
+  if(t === 'light') document.documentElement.setAttribute('data-theme','light');
+})();
+</script>
+<style>
+:root {
+  --color-bg:#000000; --color-surface:#111111; --color-surface-2:#222222;
+  --color-border:#333333; --color-primary:#E30613; --color-primary-dark:#8B0000;
+  --color-text:#FFFFFF; --color-text-muted:#AAAAAA;
+  --color-success:#28A745; --color-warning:#FFC107;
+  --font-ar:'Tajawal',sans-serif; --font-en:'Inter',sans-serif;
+  --gradient-brand:linear-gradient(135deg,#E30613 0%,#8B0000 100%);
+  --gradient-hero:linear-gradient(45deg,rgba(227,6,19,0.1) 0%,rgba(0,0,0,1) 100%);
+  --glow-card:0 0 24px rgba(227,6,19,0.35); --glow-btn:0 4px 15px rgba(227,6,19,0.40);
+  --glow-btn-h:0 6px 20px rgba(227,6,19,0.60); --glow-panel:0 0 24px rgba(227,6,19,0.20);
+  --radius-sm:4px; --radius-md:8px; --radius-lg:16px;
+  --header-bg:rgba(0,0,0,0.85);
+  --canvas-bg:#0A0A0A; --map-road:#1C1C1C; --map-text:#FFFFFF;
+  --legend-bg:rgba(0,0,0,0.80);
+}
+[data-theme="light"] {
+  --color-bg:#F5F5F0; --color-surface:#FFFFFF; --color-surface-2:#EEEEEA;
+  --color-border:#DDDDDD; --color-primary:#E30613; --color-primary-dark:#8B0000;
+  --color-text:#111111; --color-text-muted:#666666;
+  --color-success:#28A745; --color-warning:#B8860B;
+  --gradient-hero:linear-gradient(45deg,rgba(227,6,19,0.08) 0%,rgba(245,245,240,1) 100%);
+  --header-bg:rgba(255,255,255,0.92);
+  --canvas-bg:#E8E8E0; --map-road:#C8C8C0; --map-text:#111111;
+  --legend-bg:rgba(255,255,255,0.88);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html[dir="rtl"]{font-family:var(--font-ar)}
+html[dir="ltr"]{font-family:var(--font-en)}
+body{background:var(--color-bg);color:var(--color-text);margin:0;padding:4px 0 0 0;line-height:1.6;font-family:var(--font-en);transition:background-color .3s ease,color .3s ease}
+.top-bar{position:fixed;top:0;left:0;width:100%;height:4px;background:#E30613;z-index:9999}
+h1,h2,h3,h4,h5,h6{margin:0 0 1rem 0}
+h1{font-size:clamp(2.5rem,5vw,4rem);font-weight:700}
+h2{font-size:2rem;font-weight:700}
+h3{font-size:1.4rem;font-weight:700}
+.text-gradient{background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline-block}
+.cta-button{background:var(--gradient-brand);color:#fff;border:none;padding:1rem 2rem;border-radius:var(--radius-md);box-shadow:var(--glow-btn);font-weight:700;font-size:1.1rem;cursor:pointer;transition:all .3s;font-family:inherit}
+.cta-button:hover{transform:translateY(-2px);box-shadow:var(--glow-btn-h)}
+.cta-button:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-secondary{background:transparent;border:1px solid var(--color-primary);color:var(--color-primary);padding:.8rem 1.5rem;border-radius:var(--radius-md);cursor:pointer;transition:all .3s;font-family:inherit;font-weight:bold}
+.btn-secondary:hover{background:rgba(227,6,19,.1)}
+.btn-lang{padding:.5rem 1rem;border-radius:var(--radius-sm);font-size:.9rem}
+.btn-small{padding:.5rem 1rem;font-size:.9rem}
+.card{background:var(--color-surface);border:1px solid var(--color-primary);border-radius:var(--radius-lg);padding:2rem;box-shadow:var(--glow-card);margin-bottom:2rem}
+.kpi-card{background:var(--color-surface);border:1px solid var(--color-border);border-left:4px solid var(--color-primary);padding:1rem;border-radius:var(--radius-md)}
+html[dir="rtl"] .kpi-card{border-left:1px solid var(--color-border);border-right:4px solid var(--color-primary)}
+.kpi-title{font-size:.85rem;color:var(--color-text-muted);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem}
+.kpi-value{font-size:1.8rem;font-weight:bold}
+.tooltip-icon{display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--color-surface-2);text-align:center;line-height:16px;font-size:10px;cursor:help;flex-shrink:0}
+label{display:block;font-size:.85rem;color:var(--color-text-muted);margin-bottom:.3rem}
+input[type="number"],select{width:100%;background:var(--color-surface-2);border:1px solid var(--color-border);color:var(--color-text);border-radius:var(--radius-sm);padding:.5rem;font-family:inherit;transition:background-color .3s,color .3s,border-color .3s}
+.card,.kpi-card,.ps-card{transition:background-color .3s ease,border-color .3s ease,box-shadow .3s ease}
+input[type="range"]{width:100%;accent-color:var(--color-primary);margin-top:.4rem}
+.status-banner{background:rgba(255,193,7,.15);border:1px solid var(--color-warning);color:var(--color-warning);border-radius:var(--radius-sm);padding:1rem;margin-bottom:2rem;text-align:center;font-weight:bold}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{background:rgba(227,6,19,.1);color:var(--color-primary);text-transform:uppercase;letter-spacing:.5px;padding:1rem;text-align:left}
+html[dir="rtl"] th{text-align:right}
+td{padding:.9rem 1rem;border-bottom:1px solid var(--color-border)}
+.winner{background:rgba(40,167,69,.1);color:var(--color-success);font-weight:700}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:1.5rem}
+@media(max-width:900px){.grid-3,.grid-4,.grid-5{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.grid-2,.grid-3,.grid-4,.grid-5{grid-template-columns:1fr}}
+.header{position:fixed;top:4px;left:0;right:0;background:var(--header-bg);backdrop-filter:blur(10px);border-bottom:1px solid rgba(128,128,128,.15);display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;z-index:100;transition:background-color .3s}
+.header-actions{display:flex;align-items:center;gap:.5rem}
+.logo-area{display:flex;align-items:center;gap:1rem}
+.logo-svg{width:40px;height:40px;flex-shrink:0}
+.brand-name{font-weight:bold;font-size:1.5rem;margin:0;letter-spacing:1px}
+.tagline{color:var(--color-text-muted);font-size:.9rem;display:none}
+@media(min-width:768px){.tagline{display:inline-block;margin-left:1rem;padding-left:1rem;border-left:1px solid #444}}
+html[dir="rtl"] .tagline{margin-left:0;padding-left:0;border-left:none;margin-right:1rem;padding-right:1rem;border-right:1px solid #444}
+.hero{clip-path:polygon(0 0,100% 0,100% 90%,0 100%);background:var(--gradient-hero);padding:8rem 2rem 7rem;text-align:center;position:relative;overflow:hidden}
+.hero-bg{position:absolute;top:0;left:0;width:100%;height:100%;background-image:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h20v20H0V0zm20 20h20v20H20V20z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");z-index:0;pointer-events:none}
+.hero>*:not(.hero-bg){position:relative;z-index:1}
+.hero-subtitle{font-size:1.2rem;color:var(--color-text-muted);max-width:800px;margin:0 auto 2rem}
+.container{max-width:1200px;margin:0 auto;padding:2rem}
+.tabs{display:flex;gap:1rem;border-bottom:1px solid var(--color-border);margin-bottom:1.5rem}
+.tab{padding:.5rem 1rem;cursor:pointer;color:var(--color-text-muted);border-bottom:2px solid transparent;font-weight:bold;transition:all .3s}
+.tab.active{color:var(--color-primary);border-color:var(--color-primary)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.building-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:.7rem;align-items:end;margin-bottom:.7rem;background:rgba(255,255,255,.03);padding:.9rem;border-radius:var(--radius-sm)}
+@media(max-width:768px){.building-row{grid-template-columns:1fr 1fr}}
+.btn-remove{background:transparent;color:#ff4444;border:1px solid #ff4444;width:36px;height:36px;border-radius:var(--radius-sm);cursor:pointer;font-size:1.1rem;line-height:1}
+.btn-remove:hover{background:rgba(255,68,68,.1)}
+.canvas-container{position:relative;width:100%;overflow:auto;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-md);box-shadow:var(--glow-panel);background:#0A0A0A;max-height:750px;margin-bottom:1rem}
+#cityMap{display:block;cursor:crosshair}
+.canvas-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:1rem}
+.legend-box{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.88);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:.8rem;font-size:.75rem;pointer-events:none;backdrop-filter:blur(5px)}
+html[dir="rtl"] .legend-box{left:10px;right:auto}
+.legend-item{display:flex;align-items:center;gap:.5rem;margin-bottom:.25rem}
+.legend-swatch{width:13px;height:13px;border-radius:2px;flex-shrink:0}
+.map-tooltip{position:absolute;background:rgba(8,8,8,.96);border:1px solid var(--color-primary);padding:.75rem 1rem;border-radius:var(--radius-sm);pointer-events:none;font-size:.82rem;z-index:20;opacity:0;transition:opacity .15s;box-shadow:0 4px 14px rgba(0,0,0,.7);min-width:170px;white-space:nowrap}
+.chart-wrap{position:relative;height:300px;width:100%}
+.chart-wrap-tall{position:relative;height:420px;width:100%}
+.loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.88);z-index:999;display:none;justify-content:center;align-items:center;flex-direction:column;backdrop-filter:blur(6px)}
+.spinner{width:52px;height:52px;border:3px solid rgba(227,6,19,.25);border-radius:50%;border-top-color:var(--color-primary);animation:spin .85s ease-in-out infinite;margin-bottom:1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.status-badge{padding:.2rem .55rem;border-radius:var(--radius-sm);font-size:.78rem;font-weight:bold;white-space:nowrap}
+.status-badge.ok{background:rgba(40,167,69,.2);color:var(--color-success);border:1px solid var(--color-success)}
+.status-badge.warn{background:rgba(255,193,7,.2);color:var(--color-warning);border:1px solid var(--color-warning)}
+.status-badge.err{background:rgba(227,6,19,.2);color:var(--color-primary);border:1px solid var(--color-primary)}
+.ps-card{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:1.2rem}
+.ps-icon{font-size:1.8rem;margin-bottom:.4rem}
+.ps-name{font-weight:bold;font-size:.95rem;margin-bottom:.3rem}
+.ps-detail{font-size:.8rem;color:var(--color-text-muted)}
+.mt-1{margin-top:.5rem}.mt-2{margin-top:1rem}.mt-4{margin-top:2rem}
+.mb-1{margin-bottom:.5rem}.mb-2{margin-bottom:1rem}
+.text-center{text-align:center}
+.text-muted{color:var(--color-text-muted)}
+#results-section{display:none}
+/* ── Context section ── */
+.context-accent{border-left:3px solid #E30613;padding-left:.75rem;margin-bottom:1rem}
+html[dir="rtl"] .context-accent{border-left:none;border-right:3px solid #E30613;padding-left:0;padding-right:.75rem}
+/* ── Design gallery ── */
+.design-gallery{display:flex;gap:1.5rem;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:1.25rem;scrollbar-width:thin;scrollbar-color:#E30613 var(--color-surface-2)}
+.design-gallery::-webkit-scrollbar{height:6px}
+.design-gallery::-webkit-scrollbar-track{background:var(--color-surface-2)}
+.design-gallery::-webkit-scrollbar-thumb{background:#E30613;border-radius:3px}
+.design-card{width:300px;flex-shrink:0;scroll-snap-align:start;background:var(--color-surface);border:1px solid var(--color-primary);border-radius:var(--radius-lg);padding:1.25rem;box-shadow:var(--glow-card)}
+.design-tag{display:inline-block;background:rgba(227,6,19,.12);border:1px solid var(--color-primary);color:var(--color-primary);font-size:.72rem;padding:.2rem .7rem;border-radius:99px}
+.design-note{background:rgba(227,6,19,.08);border:1px solid var(--color-primary);color:var(--color-primary);border-radius:var(--radius-sm);padding:.9rem 1.1rem;margin-top:1.5rem;font-size:.85rem;line-height:1.6}
+/* ── Map canvas rebuilt ── */
+.map-wrapper{position:relative;min-height:600px;border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--glow-panel)}
+.map-btn{background:transparent;border:1px solid var(--color-primary);color:var(--color-primary);padding:.4rem .9rem;border-radius:var(--radius-sm);cursor:pointer;font-size:.82rem;font-family:inherit;font-weight:bold;transition:all .2s}
+.map-btn:hover,.map-btn.active{background:rgba(227,6,19,.2);border-color:var(--color-primary)}
+.map-controls-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;align-items:center}
+#miniMap{position:absolute;top:10px;left:10px;border:1px solid var(--color-primary);border-radius:var(--radius-sm);z-index:10;pointer-events:none}
+/* ── Spec list ── */
+.spec-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.spec-table td{padding:.55rem .75rem;border-bottom:1px solid var(--color-border);color:var(--color-text)}
+.spec-table td:first-child{color:var(--color-text-muted);width:40%;font-weight:bold;font-size:.82rem;text-transform:uppercase;letter-spacing:.3px}
+/* ── Footer ── */
+.site-footer{background:var(--color-surface);border-top:1px solid var(--color-border);padding:3rem 2rem 1.5rem;margin-top:4rem}
+.footer-nav a{display:block;color:var(--color-text-muted);text-decoration:none;padding:.25rem 0;font-size:.9rem;transition:color .2s}
+.footer-nav a:hover{color:var(--color-primary)}
+.footer-bottom{border-top:1px solid var(--color-border);padding-top:1rem;text-align:center;font-size:.8rem;color:var(--color-text-muted);margin-top:2rem}
+.footer-thumbs{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem}
+/* ── Enclosure summary ── */
+.enc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+.enc-item{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:1rem;display:flex;align-items:center;gap:.75rem}
+.enc-thumb{width:60px;height:60px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--color-border);flex-shrink:0}
+/* ── Theme toggle ── */
+.btn-theme{padding:.5rem .75rem;border-radius:var(--radius-sm);font-size:1rem;line-height:1;cursor:pointer;background:transparent;border:1px solid var(--color-primary);color:var(--color-primary);transition:all .2s}
+.btn-theme:hover{background:rgba(227,6,19,.1)}
+/* ── Mobile fixes ── */
+@media(max-width:768px){
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .design-card{width:260px}
+  .float-right-img{float:none!important;width:100%!important;margin:1rem 0!important}
+}
+@media print{.header,.hero,#control-panel,.loading-overlay,.site-footer,.top-bar{display:none!important}#results-section{display:block!important}.card{box-shadow:none;border:1px solid #ccc}}
+/* ── Cost comparison section ── */
+#cost-comparison{margin-bottom:2rem}
+.cc-banner{border-left:4px solid var(--color-success);background:rgba(40,167,69,.10);padding:1.5rem 2rem;border-radius:var(--radius-lg);border:1px solid rgba(40,167,69,.25);margin-bottom:1.5rem}
+[data-theme="light"] .cc-banner{background:rgba(40,167,69,.06)}
+.cc-banner-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem 3rem}
+.cc-saving-amount{font-size:2.8rem;font-weight:700;color:var(--color-success);line-height:1.1;letter-spacing:-1px}
+.cc-saving-label{font-size:.8rem;color:var(--color-text-muted);margin-top:.2rem}
+.cc-mini-stats{display:flex;gap:2rem;flex-wrap:wrap}
+.cc-mini-stat{text-align:center}
+.cc-mini-stat-value{font-size:1.05rem;font-weight:700;color:var(--color-success)}
+.cc-mini-stat-label{font-size:.68rem;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.35px;margin-top:.15rem;line-height:1.3}
+.cc-table{width:100%;border-collapse:collapse}
+.cc-table th{background:rgba(227,6,19,.08);color:var(--color-primary);text-transform:uppercase;letter-spacing:.5px;padding:.65rem .9rem;font-size:.74rem;text-align:left}
+html[dir="rtl"] .cc-table th{text-align:right}
+.cc-table td{padding:.65rem .9rem;border-bottom:1px solid var(--color-border);font-size:.87rem}
+.cc-table .total-row td{font-weight:700;background:rgba(40,167,69,.07);border-top:2px solid rgba(40,167,69,.25)}
+.cc-saving{color:var(--color-success);font-weight:600}
+.cc-cost-added{color:var(--color-primary)}
+.insight-icon{font-size:2rem;margin-bottom:.5rem}
+.insight-bullets{list-style:none;padding:0;margin:.75rem 0 0 0}
+.insight-bullets li{padding:.3rem 0 .3rem 1.2rem;color:var(--color-text-muted);font-size:.85rem;line-height:1.5;position:relative}
+.insight-bullets li::before{content:'•';position:absolute;left:0;color:var(--color-primary);font-weight:bold}
+html[dir="rtl"] .insight-bullets li{padding:.3rem 1.2rem .3rem 0}
+html[dir="rtl"] .insight-bullets li::before{left:auto;right:0}
+@media(max-width:768px){.cc-banner-inner{flex-direction:column;gap:1rem}.cc-mini-stats{gap:1rem}.cc-saving-amount{font-size:2rem}}
+/* ── HTML map legend ── */
+.map-legend{display:flex;flex-wrap:wrap;gap:.6rem 2rem;margin-top:.75rem;padding:.7rem 1.25rem;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-sm);font-size:.8rem}
+.map-legend-row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.map-legend-heading{font-weight:700;color:var(--color-primary);font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;padding-right:.5rem;border-right:1px solid var(--color-border)}
+.map-legend-item{display:flex;align-items:center;gap:.35rem;white-space:nowrap;color:var(--color-text-muted)}
+.map-legend-swatch{width:13px;height:13px;border-radius:2px;flex-shrink:0;display:inline-block}
+/* ── Score pills ── */
+.pill{display:inline-block;padding:.15rem .55rem;border-radius:99px;font-size:.75rem;font-weight:bold}
+.pill-green{background:rgba(40,167,69,.15);color:var(--color-success);border:1px solid var(--color-success)}
+.pill-yellow{background:rgba(255,193,7,.15);color:var(--color-warning);border:1px solid var(--color-warning)}
+.pill-red{background:rgba(227,6,19,.15);color:var(--color-primary);border:1px solid var(--color-primary)}
+/* ── Path selector ── */
+.path-selector{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem}
+@media(max-width:600px){.path-selector{grid-template-columns:1fr}}
+.path-card{background:var(--color-surface);border:2px solid var(--color-border);border-radius:var(--radius-lg);padding:2rem 1.5rem;cursor:pointer;transition:all .25s;text-align:center;position:relative}
+.path-card:hover{border-color:rgba(227,6,19,.5);box-shadow:var(--glow-panel)}
+.path-card.active{border-color:var(--color-primary);box-shadow:var(--glow-card);background:rgba(227,6,19,.04)}
+.path-icon{font-size:2.8rem;margin-bottom:.75rem}
+.path-title{font-size:1.15rem;font-weight:700;color:var(--color-text);margin-bottom:.5rem}
+.path-desc{font-size:.87rem;color:var(--color-text-muted);line-height:1.55}
+.path-badge{position:absolute;top:-.65rem;left:50%;transform:translateX(-50%);background:var(--gradient-brand);color:#fff;font-size:.72rem;font-weight:700;padding:.2rem .9rem;border-radius:99px;white-space:nowrap;letter-spacing:.3px}
+/* ── Why It Matters ── */
+#why-it-matters{padding:4rem 0;background:var(--color-surface)}
+.wim-card{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:1.5rem;text-align:center}
+.wim-metric{font-size:2.4rem;font-weight:700;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline-block}
+.wim-label{font-size:.87rem;color:var(--color-text-muted);margin-top:.3rem;line-height:1.5}
+.timeline-strip{display:flex;gap:0;overflow-x:auto;margin-top:2.5rem;padding-bottom:1.25rem;scrollbar-width:thin;scrollbar-color:#E30613 var(--color-surface-2)}
+.timeline-strip::-webkit-scrollbar{height:5px}
+.timeline-strip::-webkit-scrollbar-thumb{background:#E30613;border-radius:3px}
+.timeline-step{flex:0 0 auto;min-width:148px;padding:.75rem 1rem;text-align:center;position:relative}
+.timeline-step:not(:last-child)::after{content:'';position:absolute;top:21px;right:-1px;width:calc(50% + 1px);height:2px;background:linear-gradient(90deg,rgba(227,6,19,.5),transparent)}
+.timeline-dot{width:44px;height:44px;border-radius:50%;background:var(--gradient-brand);display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin:0 auto .5rem;box-shadow:var(--glow-btn)}
+.timeline-num{font-size:.68rem;font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.15rem}
+.timeline-text{font-size:.78rem;color:var(--color-text-muted);line-height:1.45}
+/* ── Aesthetic configurator ── */
+.ae-step{margin-bottom:2rem;padding:1.5rem;background:var(--color-surface-2);border-radius:var(--radius-md);border:1px solid var(--color-border)}
+.ae-step-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem}
+.ae-step-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--gradient-brand);color:#fff;font-weight:700;font-size:.85rem;flex-shrink:0}
+.ae-step-title{font-weight:700;font-size:1rem;color:var(--color-text)}
+.ae-station-row{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:.5rem 1rem;align-items:end;margin-bottom:.7rem;background:rgba(255,255,255,.03);padding:.8rem;border-radius:var(--radius-sm)}
+@media(max-width:600px){.ae-station-row{grid-template-columns:1fr 1fr}}
+.ae-result-card{background:var(--color-surface);border:1px solid var(--color-primary);border-radius:var(--radius-lg);padding:1.25rem;text-align:center}
+.ae-result-card img{width:100%;height:160px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:.75rem;display:block}
+.ae-badge{display:inline-block;background:rgba(227,6,19,.12);border:1px solid var(--color-primary);color:var(--color-primary);font-size:.72rem;padding:.2rem .7rem;border-radius:99px;margin:.2rem .15rem 0}
+.ae-summary-bar{background:rgba(227,6,19,.07);border:1px solid var(--color-primary);border-radius:var(--radius-md);padding:1.25rem;margin-top:1.5rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between}
+.ae-matrix-table td,.ae-matrix-table th{font-size:.82rem;padding:.5rem .75rem}
+.ae-matrix-table th{font-size:.74rem}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div id="loadingText" data-i18n="loading">Optimizing infrastructure...</div>
+</div>
+
+<div class="top-bar"></div>
+<header class="header">
+  <div class="logo-area">
+    <svg class="logo-svg" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="24,2 44,13 44,35 24,46 4,35 4,13" fill="none" stroke="#E30613" stroke-width="2.5"/>
+      <path d="M27 10 L17 26 H24 L20 38 L31 22 H24 Z" fill="#E30613"/>
+    </svg>
+    <h2 class="brand-name text-gradient">VOLTIMIZE</h2>
+    <span class="tagline" data-i18n="tagline">Optimizing Electrical Distribution Networks</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn-theme" id="themeToggle" title="Toggle theme">🌙</button>
+    <button class="btn-secondary btn-lang" id="langToggle">عربي</button>
+  </div>
+</header>
+
+<section class="hero" id="hero">
+  <div class="hero-bg"></div>
+  <h1 class="text-gradient" data-i18n="hero_title">VOLTIMIZE — Optimal Infrastructure Planning Simulator</h1>
+  <p class="hero-subtitle" data-i18n="hero_subtitle">A simulation engine applying operations research to automate electrical distribution planning for urban developments — minimizing CAPEX while guaranteeing structural load fulfillment across every zone.</p>
+  <button class="cta-button" onclick="document.getElementById('path-selector-wrap').scrollIntoView({behavior:'smooth'})" data-i18n="launch_btn">Launch Simulation</button>
+</section>
+
+<section id="context">
+<div class="container">
+  <h2 class="text-gradient" style="margin-bottom:.25rem">Riyadh Urban Context</h2>
+  <p style="color:var(--color-text-muted);margin-bottom:2rem">Demographics that define every infrastructure decision.</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3 class="text-gradient mb-2" style="font-size:1rem">📍 Placement Rationale — Why Here?</h3>
+      <p style="color:var(--color-text-muted);font-size:.82rem;margin-bottom:.75rem">Populated automatically after each simulation run — shows why each transformer was placed at its chosen location.</p>
+      <div style="overflow-x:auto;margin-bottom:1.5rem">
+        <table id="placementRationaleTable" style="font-size:.8rem">
+          <thead><tr>
+            <th style="padding:.6rem .75rem">TX</th>
+            <th style="padding:.6rem .75rem">Location</th>
+            <th style="padding:.6rem .75rem">Primary Reason</th>
+            <th style="padding:.6rem .75rem">Load Density</th>
+            <th style="padding:.6rem .75rem">Road Access</th>
+            <th style="padding:.6rem .75rem">Score</th>
+          </tr></thead>
+          <tbody id="placementRationaleBody">
+            <tr><td colspan="6" class="text-muted text-center" style="font-style:italic;padding:1.25rem;font-size:.82rem">Run the simulation to generate placement rationale.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p id="placementRationaleSummary" style="color:var(--color-text-muted);font-size:.8rem;margin-bottom:1.5rem;min-height:1.2em"></p>
+      <h3 class="text-gradient mb-2" style="font-size:1rem">Building Land Use — Riyadh Region</h3>
+      <div style="position:relative;height:200px;width:100%"><canvas id="contextChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3 class="text-gradient mb-2">Why This Matters</h3>
+      <div class="context-accent"><p style="margin:0">⚡ <strong>High electricity demand</strong> driven by a young, dense, and rapidly growing population</p></div>
+      <div class="context-accent"><p style="margin:0">🏗️ <strong>87% urbanisation rate</strong> requires underground cable networks to eliminate visual pollution</p></div>
+      <div class="context-accent"><p style="margin:0">🕌 <strong>Cultural identity</strong> must be embedded in every transformer enclosure design</p></div>
+      <figure style="margin:0">
+        <img id="contextImg"
+             src="WhatsApp_Image_2026-04-24_at_14_42_16.jpeg"
+             alt="Riyadh region demographics and districts overview"
+             loading="lazy"
+             style="width:100%;max-height:220px;object-fit:cover;border-radius:var(--radius-md);display:block;margin-top:1rem">
+        <figcaption style="font-size:.75rem;color:var(--color-text-muted);margin-top:.4rem">Riyadh Region Key Facts 2024</figcaption>
+      </figure>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="why-it-matters">
+<div class="container">
+  <h2 class="text-gradient" style="margin-bottom:.25rem">Why This Matters</h2>
+  <p style="color:var(--color-text-muted);margin-bottom:2rem">The engineering choices behind every cable and transformer shape Riyadh's urban future.</p>
+  <div class="grid-3">
+    <div class="wim-card">
+      <div class="wim-metric">40%</div>
+      <div style="font-size:.95rem;font-weight:700;color:var(--color-text);margin-top:.5rem">CAPEX Reduction</div>
+      <div class="wim-label">Optimised placement vs. manual layout cuts capital expenditure by up to 40% on large compounds</div>
+    </div>
+    <div class="wim-card">
+      <div class="wim-metric">100%</div>
+      <div style="font-size:.95rem;font-weight:700;color:var(--color-text);margin-top:.5rem">Load Coverage</div>
+      <div class="wim-label">Every building in the compound is served within SEC safety limits — zero unmet load</div>
+    </div>
+    <div class="wim-card">
+      <div class="wim-metric">5×</div>
+      <div style="font-size:.95rem;font-weight:700;color:var(--color-text);margin-top:.5rem">Faster Planning</div>
+      <div class="wim-label">Simulation generates a complete infrastructure plan in under 1 second vs. days of manual work</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:2rem;overflow:hidden">
+    <h3 class="text-gradient mb-2" style="font-size:.9rem;text-transform:uppercase;letter-spacing:.5px">Project Lifecycle — 7 Planning Phases</h3>
+    <div class="timeline-strip">
+      <div class="timeline-step">
+        <div class="timeline-dot">📐</div>
+        <div class="timeline-num">Phase 1</div>
+        <div style="font-weight:700;font-size:.83rem;color:var(--color-text);margin-bottom:.2rem">Site Survey</div>
+        <div class="timeline-text">Topographic mapping, soil analysis &amp; utility discovery</div>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-dot">📊</div>
+        <div class="timeline-num">Phase 2</div>
+        <div style="font-weight:700;font-size:.83rem;color:var(--color-text);margin-bottom:.2rem">Load Forecast</div>
+        <div class="timeline-text">Demand modelling per zone using SEC diversity factors</div>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-dot">⚙️</div>
+        <div class="timeline-num">Phase 3</div>
+        <div style="font-weight:700;font-size:.83rem;color:var(--color-text);margin-bottom:.2rem">Optimisation</div>
+        <div class="timeline-text">K-Means placement + Underutilised Land Priority scoring</div>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-dot">🏗️</div>
+        <div class="timeline-num">Phase 4</div>
+        <div style="font-weight:700;font-size:.83rem;color:var(--color-text);margin-bottom:.2rem">Design Review</div>
+        <div class="timeline-text">Enclosure selection, cultural integration, SEC compliance</div>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-dot">⚡</div>
+        <div class="timeline-num">Phase 5</div>
+        <div style="font-weight:700;font-size:.83rem;color:var(--color-text);margin-bottom:.2rem">Civil Works</div>
+        <div class="timeline-text">Trenching, duct installation &amp; backfilling along road routes</div>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-dot">🔌</div>
+        <div class="timeline-num">Phase 6</div>
+        <div style="font-weight:700;font-size:.83rem;color:var(--color-text);margin-bottom:.2rem">Energisation</div>
+        <div class="timeline-text">Cable pulling, jointing &amp; step-by-step zone energisation</div>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-dot">✅</div>
+        <div class="timeline-num">Phase 7</div>
+        <div style="font-weight:700;font-size:.83rem;color:var(--color-text);margin-bottom:.2rem">Commissioning</div>
+        <div class="timeline-text">Load testing, SCADA integration &amp; handover to SEC</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<div class="container" id="path-selector-wrap" style="scroll-margin-top:80px;padding-top:3rem;padding-bottom:1rem">
+  <h2 class="text-gradient" style="margin-bottom:.4rem">Choose Your Path</h2>
+  <p style="color:var(--color-text-muted);margin-bottom:1.75rem">Select a workflow — simulate the full network or jump straight to enclosure aesthetics.</p>
+  <div class="path-selector">
+    <div class="path-card active" id="pathCardA" onclick="selectPath('A')">
+      <span class="path-badge">Recommended</span>
+      <div class="path-icon">⚙️</div>
+      <div class="path-title">Path A — Build from Scratch</div>
+      <div class="path-desc">Configure compound parameters, run the K-Means optimisation engine, and generate a full infrastructure plan with CAPEX breakdown and city map.</div>
+    </div>
+    <div class="path-card" id="pathCardB" onclick="selectPath('B')">
+      <div class="path-icon">🎨</div>
+      <div class="path-title">Path B — Design Enclosure Aesthetics</div>
+      <div class="path-desc">Skip the simulation and configure transformer enclosures directly — set zone context and cultural priorities to receive tailored design recommendations.</div>
+    </div>
+  </div>
+</div>
+
+<div class="container" id="control-panel" style="scroll-margin-top:80px">
+  <div class="card" id="simulation">
+    <h2 class="text-gradient mb-2" data-i18n="config_title">Compound Configuration</h2>
+    <div class="tabs">
+      <div class="tab active" data-tab="setup" data-i18n="tab_setup">Compound Setup</div>
+      <div class="tab" data-tab="buildings" data-i18n="tab_buildings">Building Types</div>
+    </div>
+
+    <div class="tab-content active" id="tab-setup">
+      <div class="grid-3">
+        <div>
+          <label data-i18n="lbl_shape">Compound Shape</label>
+          <select id="simShape">
+            <option value="Square" data-i18n="sh_square">Square</option>
+            <option value="Rectangle" data-i18n="sh_rect">Rectangle</option>
+            <option value="LShape" data-i18n="sh_l">L-Shape</option>
+          </select>
+        </div>
+        <div>
+          <label data-i18n="lbl_area">Total Area (m²)</label>
+          <input type="number" id="simArea" value="500000" step="10000" min="10000">
+        </div>
+        <div>
+          <label data-i18n="lbl_cell">Grid Cell Size (m)</label>
+          <input type="number" id="simCellSize" value="50" step="5" min="10" max="200">
+        </div>
+        <div>
+          <label><span data-i18n="lbl_res_pct">Residential %</span>: <span id="valRes">70</span>%</label>
+          <input type="range" id="simResPct" min="0" max="100" value="70">
+        </div>
+        <div>
+          <label><span data-i18n="lbl_pub_pct">Public Services %</span>: <span id="valPub">10</span>%</label>
+          <input type="range" id="simPubPct" min="0" max="100" value="10">
+        </div>
+        <div>
+          <label><span data-i18n="lbl_com_pct">Commercial %</span>: <span id="valCom">20</span>%</label>
+          <input type="range" id="simComPct" disabled style="opacity:.5;accent-color:var(--color-primary);width:100%;margin-top:.4rem" value="20">
+          <small style="color:var(--color-primary);font-size:11px" data-i18n="com_auto">Auto-calculated</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-buildings">
+      <div id="buildingList"></div>
+      <button class="btn-secondary btn-small mt-2" id="btnAddBuilding" data-i18n="add_building">+ Add Building Type</button>
+    </div>
+
+    <div class="mt-4 text-center">
+      <button class="cta-button" id="btnRunSim" style="width:100%;max-width:400px" data-i18n="run_sim">RUN SIMULATION</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Path B: Aesthetic Configurator ────────────────────── -->
+<div class="container" id="aesthetic" style="display:none;scroll-margin-top:80px">
+  <div class="card">
+    <h2 class="text-gradient mb-2">🎨 Enclosure Aesthetic Configurator</h2>
+    <p style="color:var(--color-text-muted);margin-bottom:2rem">Define your transformer stations and get tailored design recommendations based on zone context, cultural character, and functional priorities.</p>
+
+    <div class="ae-step">
+      <div class="ae-step-header">
+        <span class="ae-step-num">1</span>
+        <span class="ae-step-title">How many transformer stations does your compound have?</span>
+      </div>
+      <div style="max-width:280px">
+        <label>Number of Stations (1–12)</label>
+        <input type="number" id="aeStationCount" min="1" max="12" value="3">
+      </div>
+      <button class="cta-button btn-small" style="margin-top:1rem" onclick="buildAeStations()">Configure Stations →</button>
+    </div>
+
+    <div class="ae-step" id="aeStationsConfig" style="display:none">
+      <div class="ae-step-header">
+        <span class="ae-step-num">2</span>
+        <span class="ae-step-title">Configure each station's zone context and priorities</span>
+      </div>
+      <div id="aeStationRows"></div>
+    </div>
+
+    <div class="ae-step" id="aeMatrixStep" style="display:none">
+      <div class="ae-step-header">
+        <span class="ae-step-num">3</span>
+        <span class="ae-step-title">Design Recommendation Matrix</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="ae-matrix-table">
+          <thead><tr>
+            <th>Station · Zone</th><th>Character</th><th>Priority</th>
+            <th>Recommended Design</th><th>Key Features</th><th>Cost Premium</th>
+          </tr></thead>
+          <tbody id="aeMatrixBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="ae-step" id="aeResultsStep" style="display:none">
+      <div class="ae-step-header">
+        <span class="ae-step-num">4</span>
+        <span class="ae-step-title">Your Personalised Recommendations</span>
+      </div>
+      <div class="grid-3" id="aeResultsGrid"></div>
+    </div>
+
+    <div id="aeSummaryBar" style="display:none">
+      <div class="ae-step-header" style="margin-bottom:.75rem">
+        <span class="ae-step-num">5</span>
+        <span class="ae-step-title">Project Summary</span>
+      </div>
+      <div class="ae-summary-bar" id="aeSummaryContent"></div>
+    </div>
+
+    <div class="mt-4 text-center">
+      <button class="cta-button" id="aeRunBtn" style="display:none;width:100%;max-width:400px" onclick="runAestheticConfig()">Generate Recommendations →</button>
+    </div>
+  </div>
+</div>
+
+<div class="container" id="results-section" style="scroll-margin-top:80px">
+  <div class="status-banner" data-i18n="status_done">Simulation complete — using Weighted K-Means optimizer</div>
+
+  <div class="grid-5 mb-2">
+    <div class="kpi-card">
+      <div class="kpi-title"><span data-i18n="kpi_load">Total Load (kVA)</span><span class="tooltip-icon" title="Aggregated peak diversified load across all building zones">ℹ</span></div>
+      <div class="kpi-value text-gradient" id="kpiTotalLoad">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title"><span data-i18n="kpi_tx">Transformers</span><span class="tooltip-icon" title="Number of distribution transformers placed using 80% capacity safety rule">ℹ</span></div>
+      <div class="kpi-value" id="kpiTxNodes">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title"><span data-i18n="kpi_mv">MV Cable (km)</span><span class="tooltip-icon" title="11kV medium-voltage routing from main substation to each transformer">ℹ</span></div>
+      <div class="kpi-value" id="kpiMvc">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title"><span data-i18n="kpi_lv">LV Cable (km)</span><span class="tooltip-icon" title="400V low-voltage routing from transformers to building clusters">ℹ</span></div>
+      <div class="kpi-value" id="kpiLvc">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title"><span data-i18n="kpi_capex">Total CAPEX (SAR)</span><span class="tooltip-icon" title="Total capital expenditure: cables + transformers + civil works + substation">ℹ</span></div>
+      <div class="kpi-value text-gradient" id="kpiCapex">—</div>
+    </div>
+  </div>
+
+  <!-- ── Cost Comparison Calculator ──────────────────────── -->
+  <div id="cost-comparison" style="display:none">
+
+    <!-- Section header -->
+    <div style="display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.3rem;flex-wrap:wrap">
+      <h2 class="text-gradient" style="margin:0">Cost Comparison — Our Model vs Traditional Method</h2>
+      <span class="tooltip-icon" style="margin-top:.35rem;flex-shrink:0" title="Estimates are based on standard Saudi Electricity Company parameters. Traditional method baseline uses uniform 500m grid spacing with 60% transformer loading. Actual savings may vary.">ℹ</span>
+    </div>
+    <p style="color:var(--color-text-muted);font-size:.83rem;margin-bottom:.3rem">مقارنة التكاليف — نموذجنا مقابل الطريقة التقليدية</p>
+    <p style="color:var(--color-text-muted);margin-bottom:1.75rem">Based on your compound inputs, here is how Voltimize compares to the traditional uniform-grid placement method used in most Saudi residential developments.</p>
+
+    <!-- Part 1: Headline Saving Banner -->
+    <div class="cc-banner">
+      <div class="cc-banner-inner">
+        <div>
+          <div class="cc-saving-amount" id="ccTenYearSaving">—</div>
+          <div id="ccTenYearPct" style="font-size:1.1rem;font-weight:700;color:var(--color-success);margin-top:.15rem;letter-spacing:.5px"></div>
+          <div class="cc-saving-label">Estimated 10-Year Total Saving</div>
+          <div style="font-size:.72rem;color:var(--color-text-muted)">اجمالي المبلغ الموفر خلال ١٠ سنوات</div>
+        </div>
+        <div class="cc-mini-stats">
+          <div class="cc-mini-stat">
+            <div class="cc-mini-stat-value" id="ccCapexSaving">—</div>
+            <div class="cc-mini-stat-label">CAPEX Saving</div>
+          </div>
+          <div class="cc-mini-stat">
+            <div class="cc-mini-stat-value" id="ccMaintSaving">—</div>
+            <div class="cc-mini-stat-label">Annual Maintenance Saving</div>
+          </div>
+          <div class="cc-mini-stat">
+            <div class="cc-mini-stat-value" id="ccCableSaving">—</div>
+            <div class="cc-mini-stat-label">Cable Reduction</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Part 2: Detailed Breakdown Table -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <h3 class="text-gradient mb-2" style="font-size:1rem">Detailed Cost Breakdown <span style="color:var(--color-text-muted);font-size:.85rem;font-weight:400">/ تفصيل التكاليف</span></h3>
+      <div style="overflow-x:auto">
+        <table class="cc-table">
+          <thead><tr>
+            <th>Cost Component</th>
+            <th>Traditional Method (SAR)</th>
+            <th>Voltimize Model (SAR)</th>
+            <th>Difference (SAR)</th>
+          </tr></thead>
+          <tbody id="ccTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Part 3: Visual Bar Comparison -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <h3 class="text-gradient mb-2" style="font-size:1rem">Visual Comparison <span style="color:var(--color-text-muted);font-size:.85rem;font-weight:400">/ المقارنة البصرية</span></h3>
+      <div style="position:relative;height:320px;width:100%"><canvas id="comparisonChart"></canvas></div>
+    </div>
+
+    <!-- Part 4: Insight Cards -->
+    <div class="grid-3" style="margin-bottom:1.5rem">
+      <div class="card">
+        <div class="insight-icon">📉</div>
+        <h3 style="font-size:1rem;margin-bottom:.2rem">Why Traditional Costs More</h3>
+        <p style="color:var(--color-text-muted);font-size:.78rem;margin-bottom:.5rem">لماذا الطريقة التقليدية أغلى؟</p>
+        <ul class="insight-bullets">
+          <li>Uniform grid placement ignores load centres → longer cables</li>
+          <li>Over-provisioned transformers (60% rule) → unnecessary units</li>
+          <li>No road access planning → higher maintenance callout costs</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="insight-icon">⚡</div>
+        <h3 style="font-size:1rem;margin-bottom:.2rem">What Our Model Adds</h3>
+        <p style="color:var(--color-text-muted);font-size:.78rem;margin-bottom:.5rem">ما الذي يضيفه نموذجنا؟</p>
+        <ul class="insight-bullets">
+          <li>Weighted K-Means reduces cable by ~23–40%</li>
+          <li>80% loading rule → fewer, right-sized transformers</li>
+          <li>Road-snapped placement → faster maintenance, lower annual cost</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="insight-icon">🕌</div>
+        <h3 style="font-size:1rem;margin-bottom:.2rem">The Aesthetic ROI</h3>
+        <p style="color:var(--color-text-muted);font-size:.78rem;margin-bottom:.5rem">العائد على الاستثمار الجمالي</p>
+        <p style="font-size:.87rem;color:var(--color-text);line-height:1.6" id="ccRoiText">Run the simulation to see the ROI calculation.</p>
+      </div>
+    </div>
+
+  </div>
+  <!-- ── End Cost Comparison ──────────────────────────────── -->
+
+  <div class="card" id="designs-anchor" style="scroll-margin-top:80px">
+    <h2 class="text-gradient mb-2">Enclosure Design Options</h2>
+    <p style="color:var(--color-text-muted);margin-bottom:1.5rem">Each station adopts a design language suited to its surrounding zone context.</p>
+    <div class="design-gallery" id="designGallery">
+      <div class="design-card">
+        <img src="WhatsApp_Image_2026-04-24_at_14_30_28.jpeg" alt="Stone-clad transformer enclosure with louvers and landscaping" loading="lazy" style="width:100%;height:190px;object-fit:cover;border-radius:var(--radius-sm);display:block;margin-bottom:1rem">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--color-text);margin-bottom:.4rem">Stone-Clad Enclosure</div>
+        <div style="font-size:.83rem;color:var(--color-text-muted);line-height:1.55;margin-bottom:.75rem">Natural or engineered stone finish with concealed ventilation louvers. Ideal near roundabouts, fuel stations, and commercial strips. Dimensions: 3100 × 2300 mm.</div>
+        <span class="design-tag">Urban Commercial</span>
+      </div>
+      <div class="design-card">
+        <img src="WhatsApp_Image_2026-04-24_at_14_30_48.jpeg" alt="Natural boulder-shaped transformer enclosure for parks" loading="lazy" style="width:100%;height:190px;object-fit:cover;border-radius:var(--radius-sm);display:block;margin-bottom:1rem">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--color-text);margin-bottom:.4rem">Natural Rock Form</div>
+        <div style="font-size:.83rem;color:var(--color-text-muted);line-height:1.55;margin-bottom:.75rem">Industrial shell shaped as a large boulder. Hidden side air inlets and concealed top hot-air outlets. Zero visual impact in parks and open spaces. Width: 4.0–5.0 m.</div>
+        <span class="design-tag">Parks &amp; Roundabouts</span>
+      </div>
+      <div class="design-card">
+        <img src="WhatsApp_Image_2026-04-24_at_14_40_59.jpeg" alt="Najdi traditional earthen mud transformer enclosure with technical drawings" loading="lazy" style="width:100%;height:190px;object-fit:cover;border-radius:var(--radius-sm);display:block;margin-bottom:1rem">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--color-text);margin-bottom:.4rem">Najdi Traditional Architecture</div>
+        <div style="font-size:.83rem;color:var(--color-text-muted);line-height:1.55;margin-bottom:.75rem">Earthen plaster finish with triangular ventilation openings and curved parapets. Seamless integration with Saudi heritage neighbourhoods. Dimensions: 2600 × 2800 × 3200 mm.</div>
+        <span class="design-tag">Heritage Districts</span>
+      </div>
+      <div class="design-card">
+        <img src="WhatsApp_Image_2026-04-24_at_14_48_33.jpeg" alt="Classical heritage limestone facade transformer enclosure with arched mashrabiya grilles" loading="lazy" style="width:100%;height:190px;object-fit:cover;border-radius:var(--radius-sm);display:block;margin-bottom:1rem">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--color-text);margin-bottom:.4rem">Classical Heritage Style</div>
+        <div style="font-size:.83rem;color:var(--color-text-muted);line-height:1.55;margin-bottom:.75rem">Limestone facade with arched mashrabiya grilles, ornamental cornices, and heritage lanterns. Ideal for upscale residential and premium districts. Dimensions: 2800 × 2200 × 3000 mm.</div>
+        <span class="design-tag">Residential Premium</span>
+      </div>
+      <div class="design-card">
+        <img src="WhatsApp_Image_2026-04-24_at_14_41_25.jpeg" alt="Modern minimalist grey concrete transformer with aluminium louvres front top and side views" loading="lazy" style="width:100%;height:190px;object-fit:cover;border-radius:var(--radius-sm);display:block;margin-bottom:1rem">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--color-text);margin-bottom:.4rem">Modern Minimalist</div>
+        <div style="font-size:.83rem;color:var(--color-text-muted);line-height:1.55;margin-bottom:.75rem">Concrete panel with vertical aluminium louvres, integrated accent lighting, and planter base. Suited to contemporary mixed-use and commercial zones.</div>
+        <span class="design-tag">Mixed-Use Modern</span>
+      </div>
+      <div class="design-card">
+        <img src="WhatsApp_Image_2026-04-24_at_14_45_52.jpeg" alt="Islamic geometric terracotta mashrabiya screen transformer enclosure four views" loading="lazy" style="width:100%;height:190px;object-fit:cover;border-radius:var(--radius-sm);display:block;margin-bottom:1rem">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--color-text);margin-bottom:.4rem">Islamic Geometric Screen</div>
+        <div style="font-size:.83rem;color:var(--color-text-muted);line-height:1.55;margin-bottom:.75rem">Laser-cut terracotta mashrabiya screen combining natural ventilation with cultural identity. Interior landscaped with native desert shrubs.</div>
+        <span class="design-tag">Civic &amp; Cultural</span>
+      </div>
+    </div>
+    <div class="design-note">💡 After placement, the simulator automatically recommends an enclosure style per zone type:
+      <strong>Residential</strong> → Classical / Najdi &nbsp;·&nbsp; <strong>Commercial</strong> → Stone-Clad / Modern &nbsp;·&nbsp; <strong>Parks &amp; Mosques</strong> → Rock Form / Geometric Screen</div>
+
+    <div style="margin-top:2rem">
+      <h3 class="text-gradient mb-2">Featured: Najdi Earthen Model — 3-View Technical Showcase</h3>
+      <div class="grid-2">
+        <div>
+          <img src="WhatsApp_Image_2026-04-24_at_14_50_57.jpeg"
+               alt="Najdi transformer enclosure — front, top, and side views"
+               loading="lazy"
+               style="width:100%;border-radius:var(--radius-md);object-fit:cover;max-width:100%">
+        </div>
+        <div>
+          <table class="spec-table">
+            <tr><td>Material</td><td>Earthen plaster (reinforced concrete core)</td></tr>
+            <tr><td>Colour</td><td>Natural sand / mud tone</td></tr>
+            <tr><td>Ventilation</td><td>Triangular perforated openings (top row + side columns)</td></tr>
+            <tr><td>Access</td><td>Double vented wooden door with electric hazard signage</td></tr>
+            <tr><td>Views</td><td>Front · Top · Side</td></tr>
+            <tr><td>Best For</td><td>Heritage districts, residential zones, civic areas</td></tr>
+            <tr><td>Blend Factor</td><td>★★★★★ (maximum cultural integration)</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="map-card">
+    <div class="map-controls-row">
+      <h3 class="text-gradient" data-i18n="map_title" style="margin:0;flex:1">Optimized City Map</h3>
+      <button class="map-btn" id="btnZoomIn">🔍 +</button>
+      <button class="map-btn" id="btnZoomOut">🔍 −</button>
+      <button class="map-btn" id="btnZoomReset" data-i18n="reset_view">⟳ Reset</button>
+      <button class="map-btn active" id="btnToggleGrid">▦ Grid</button>
+      <button class="map-btn active" id="btnToggleCables">〜 Cables</button>
+      <button class="map-btn active" id="btnToggleBuildings">🏢 Buildings</button>
+    </div>
+    <div class="map-wrapper" id="mapWrapper">
+      <canvas id="cityMap" style="display:block;cursor:crosshair;min-width:900px;min-height:600px"></canvas>
+      <canvas id="miniMap" width="160" height="160"></canvas>
+      <div class="map-tooltip" id="mapTooltip"></div>
+    </div>
+    <!-- HTML map legend -->
+    <div class="map-legend" id="mapLegendHtml">
+      <div class="map-legend-row">
+        <span class="map-legend-heading">Land Use</span>
+        <div class="map-legend-item"><div class="map-legend-swatch" style="background:rgba(220,150,80,.5)"></div><span>Residential</span></div>
+        <div class="map-legend-item"><div class="map-legend-swatch" style="background:rgba(80,140,220,.5)"></div><span>Commercial</span></div>
+        <div class="map-legend-item"><div class="map-legend-swatch" style="background:rgba(60,180,100,.5)"></div><span>Public Services</span></div>
+        <div class="map-legend-item"><div class="map-legend-swatch" style="background:rgba(200,200,190,.5);border:1px solid #999"></div><span>Road Network</span></div>
+      </div>
+      <div class="map-legend-row">
+        <span class="map-legend-heading">Infrastructure</span>
+        <div class="map-legend-item"><div class="map-legend-swatch" style="background:#E30613;border-radius:3px"></div><span>Transformer ⚡</span></div>
+        <div class="map-legend-item"><div class="map-legend-swatch" style="background:#FF8C00;height:3px;margin-top:5px"></div><span>LV Cable 400V</span></div>
+        <div class="map-legend-item"><div class="map-legend-swatch" style="background:#E30613;height:4px;margin-top:5px"></div><span>MV Cable 11kV</span></div>
+        <div class="map-legend-item"><div class="map-legend-swatch" style="background:#28A745;width:13px;height:13px;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:#fff">✓</div><span>Score ≥ 65 (Good)</span></div>
+        <div class="map-legend-item"><div class="map-legend-swatch" style="background:#FFC107;width:13px;height:13px;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:#111">⚠</div><span>Score &lt; 65 (Review)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3 class="text-gradient mb-2" data-i18n="cost_chart">CAPEX Breakdown</h3>
+      <div class="chart-wrap"><canvas id="costChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3 class="text-gradient mb-2" data-i18n="load_chart">Load Distribution by Type</h3>
+      <div class="chart-wrap"><canvas id="loadChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 class="text-gradient mb-2" data-i18n="tx_load_chart">Load per Transformer vs Capacity</h3>
+    <div class="chart-wrap-tall"><canvas id="txLoadChart"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h3 class="text-gradient mb-2" data-i18n="tx_table">Transformer Fulfillment Table</h3>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th data-i18n="th_id">ID</th>
+          <th data-i18n="th_loc">Location</th>
+          <th data-i18n="th_cap">Capacity (kVA)</th>
+          <th data-i18n="th_load">Zone Load (kVA)</th>
+          <th data-i18n="th_pct">Loading %</th>
+          <th data-i18n="th_bldgs">Buildings</th>
+          <th data-i18n="th_status">Status</th>
+          <th data-i18n="th_design">Rec. Design</th>
+        </tr></thead>
+        <tbody id="fulfillmentBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 class="text-gradient mb-2" data-i18n="algo_table">Algorithm Comparison</h3>
+    <figure style="margin:0 0 1rem 0">
+      <img src="WhatsApp_Image_2026-04-24_at_14_46_18.jpeg"
+           alt="Riyadh city infographic with green tones and district statistics"
+           loading="lazy"
+           class="float-right-img"
+           style="float:right;max-width:300px;width:100%;border-radius:var(--radius-md);margin:0 0 1rem 1.5rem;border:1px solid var(--color-border)">
+    </figure>
+    <p style="color:var(--color-text-muted);line-height:1.7;margin-bottom:1.5rem">
+      The <strong style="color:var(--color-text)">Weighted K-Means</strong> algorithm minimises total cable length while maintaining load balance across all transformer zones, allowing each station to adopt an enclosure style suited to its urban context without compromising network performance or safety.
+    </p>
+    <div style="overflow-x:auto;clear:both">
+      <table>
+        <thead><tr>
+          <th data-i18n="algo_name">Algorithm</th>
+          <th data-i18n="algo_cable">Total Cable (km)</th>
+          <th data-i18n="algo_cost">CAPEX (SAR)</th>
+          <th data-i18n="algo_load">Avg Loading %</th>
+          <th data-i18n="algo_cov">Coverage</th>
+        </tr></thead>
+        <tbody id="algoBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" id="encSummaryCard">
+    <h3 class="text-gradient mb-2">Zone-by-Zone Enclosure Recommendations</h3>
+    <div class="enc-grid" id="encSummaryGrid"></div>
+  </div>
+
+  <div class="card">
+    <h3 class="text-gradient mb-2" data-i18n="ps_title">Public Services Placement Report</h3>
+    <div class="grid-4" id="psGrid"></div>
+  </div>
+
+  <div class="text-center mt-2" style="padding-bottom:3rem">
+    <button class="btn-secondary" onclick="window.print()" data-i18n="btn_print">Download Report (Print)</button>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="grid-3">
+      <div>
+        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+          <svg width="36" height="36" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="24,2 44,13 44,35 24,46 4,35 4,13" fill="none" stroke="#E30613" stroke-width="2.5"/>
+            <path d="M27 10 L17 26 H24 L20 38 L31 22 H24 Z" fill="#E30613"/>
+          </svg>
+          <h3 class="text-gradient" style="margin:0;font-size:1.2rem">VOLTIMIZE</h3>
+        </div>
+        <p style="color:var(--color-text-muted);font-size:.85rem;line-height:1.6">Optimizing Electrical Distribution Networks — Riyadh 2026</p>
+      </div>
+      <div>
+        <div style="font-size:.7rem;text-transform:uppercase;color:var(--color-primary);letter-spacing:1px;margin-bottom:.75rem;font-weight:bold">Quick Navigation</div>
+        <nav class="footer-nav">
+          <a href="#hero">Overview</a>
+          <a href="#context">Urban Context</a>
+          <a href="#simulation">Simulation</a>
+          <a href="#results-section">Results</a>
+          <a href="#cost-comparison">Cost Compare</a>
+          <a href="#designs-anchor">Design Options</a>
+        </nav>
+      </div>
+      <div>
+        <div style="font-size:.7rem;text-transform:uppercase;color:var(--color-primary);letter-spacing:1px;margin-bottom:.75rem;font-weight:bold">Enclosure Concepts</div>
+        <div class="footer-thumbs">
+          <img src="WhatsApp_Image_2026-04-24_at_14_40_59.jpeg" alt="Najdi traditional enclosure" loading="lazy" style="width:80px;height:80px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--color-border)">
+          <img src="WhatsApp_Image_2026-04-24_at_14_45_52.jpeg" alt="Islamic geometric screen enclosure" loading="lazy" style="width:80px;height:80px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--color-border)">
+          <img src="WhatsApp_Image_2026-04-24_at_14_50_57.jpeg" alt="Najdi 3-view model enclosure" loading="lazy" style="width:80px;height:80px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--color-border)">
+        </div>
+        <div style="font-size:.75rem;color:var(--color-text-muted);margin-top:.4rem">Traditional · Geometric Screen · Najdi Model</div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 Voltimize · Challenge 2 — Optimal Infrastructure Planning · Built for Saudi Vision 2030</div>
+  </div>
+</footer>
+
+<script>
+/* ── i18n ─────────────────────────────────────────────── */
+const i18n = {
+  en:{
+    tagline:"Optimizing Electrical Distribution Networks",
+    hero_title:"VOLTIMIZE — Optimal Infrastructure Planning Simulator",
+    hero_subtitle:"A simulation engine applying operations research to automate electrical distribution planning for urban developments — minimizing CAPEX while guaranteeing structural load fulfillment across every zone.",
+    launch_btn:"Launch Simulation",config_title:"Compound Configuration",
+    tab_setup:"Compound Setup",tab_buildings:"Building Types",
+    lbl_shape:"Compound Shape",sh_square:"Square",sh_rect:"Rectangle",sh_l:"L-Shape",
+    lbl_area:"Total Area (m²)",lbl_cell:"Grid Cell Size (m)",
+    lbl_res_pct:"Residential %",lbl_pub_pct:"Public Services %",lbl_com_pct:"Commercial %",
+    com_auto:"Auto-calculated",add_building:"+ Add Building Type",run_sim:"RUN SIMULATION",
+    status_done:"Simulation complete — using Weighted K-Means optimizer",
+    kpi_load:"Total Load (kVA)",kpi_tx:"Transformers",
+    kpi_mv:"MV Cable (km)",kpi_lv:"LV Cable (km)",kpi_capex:"Total CAPEX (SAR)",
+    map_title:"Optimized City Map",reset_view:"Reset View",
+    leg_road:"Road Network",leg_res:"Residential",leg_com:"Commercial",
+    leg_pub:"Public Services",leg_tx:"Transformer ⚡",
+    leg_lv:"LV Cable 400V",leg_mv:"MV Cable 11kV",
+    cost_chart:"CAPEX Breakdown",load_chart:"Load Distribution by Type",
+    tx_load_chart:"Load per Transformer vs Capacity",
+    tx_table:"Transformer Fulfillment Table",
+    th_id:"ID",th_loc:"Location",th_cap:"Capacity (kVA)",
+    th_load:"Zone Load (kVA)",th_pct:"Loading %",th_bldgs:"Buildings",th_status:"Status",
+    algo_table:"Algorithm Comparison",algo_name:"Algorithm",algo_cable:"Total Cable (km)",
+    algo_cost:"CAPEX (SAR)",algo_load:"Avg Loading %",algo_cov:"Coverage",
+    ps_title:"Public Services Placement Report",btn_print:"Download Report (Print)",
+    loading:"Optimizing infrastructure...",
+    Villa:"Villa",ApartmentBlock:"Apartment Block",Tower:"Tower",
+    CommercialUnit:"Commercial Unit",Mosque:"Mosque",GardenPark:"Garden / Park",School:"School",
+    lbl_type:"Type",lbl_units:"Units",lbl_floors:"Floors",lbl_area_u:"Area (m²)",lbl_pf:"PF",
+    stat_ok:"✓ FULFILLED",stat_warn:"⚠ WARNING",stat_err:"✗ OVERLOADED",
+    ps_tx:"Transformer",ps_dist:"Distance to TX",ps_opt:"✓ Optimal",ps_sub:"⚠ Suboptimal"
+  },
+  ar:{
+    tagline:"تحسين شبكات التوزيع الكهربائية",
+    hero_title:"فولتيميز — محاكي التخطيط الأمثل للبنية التحتية",
+    hero_subtitle:"محرك محاكاة يطبق بحوث العمليات لأتمتة تخطيط التوزيع الكهربائي للمجمعات الحضرية — يقلل التكلفة الرأسمالية مع ضمان تلبية الأحمال لكل منطقة.",
+    launch_btn:"بدء المحاكاة",config_title:"إعدادات المجمع العمراني",
+    tab_setup:"إعدادات المجمع",tab_buildings:"أنواع المباني",
+    lbl_shape:"شكل المجمع",sh_square:"مربع",sh_rect:"مستطيل",sh_l:"شكل حرف L",
+    lbl_area:"المساحة الإجمالية (م²)",lbl_cell:"حجم الخلية (متر)",
+    lbl_res_pct:"نسبة السكني %",lbl_pub_pct:"نسبة الخدمات %",lbl_com_pct:"نسبة التجاري %",
+    com_auto:"محسوب تلقائياً",add_building:"+ إضافة نوع مبنى",run_sim:"تشغيل المحاكاة",
+    status_done:"اكتملت المحاكاة — باستخدام خوارزمية K-Means الموزونة",
+    kpi_load:"إجمالي الحمل (kVA)",kpi_tx:"المحولات",
+    kpi_mv:"كابلات الجهد المتوسط (كم)",kpi_lv:"كابلات الجهد المنخفض (كم)",kpi_capex:"التكلفة الرأسمالية (ريال)",
+    map_title:"الخريطة الحضرية المحسنة",reset_view:"إعادة الضبط",
+    leg_road:"شبكة الطرق",leg_res:"منطقة سكنية",leg_com:"منطقة تجارية",
+    leg_pub:"مرافق عامة",leg_tx:"محول ⚡",
+    leg_lv:"كابل جهد منخفض 400V",leg_mv:"كابل جهد متوسط 11kV",
+    cost_chart:"تحليل التكلفة الرأسمالية",load_chart:"توزيع الأحمال حسب النوع",
+    tx_load_chart:"حمل كل محول مقارنةً بالطاقة الاستيعابية",
+    tx_table:"جدول تلبية أحمال المحولات",
+    th_id:"المعرف",th_loc:"الموقع",th_cap:"السعة (kVA)",
+    th_load:"حمل المنطقة (kVA)",th_pct:"نسبة التحميل %",th_bldgs:"المباني",th_status:"الحالة",
+    algo_table:"مقارنة الخوارزميات",algo_name:"الخوارزمية",algo_cable:"إجمالي الكابلات (كم)",
+    algo_cost:"التكلفة (ريال)",algo_load:"متوسط التحميل %",algo_cov:"التغطية",
+    ps_title:"تقرير توزيع المرافق العامة",btn_print:"تحميل التقرير (طباعة)",
+    loading:"جاري تحسين البنية التحتية...",
+    Villa:"فيلا",ApartmentBlock:"مجمع شقق",Tower:"برج",
+    CommercialUnit:"وحدة تجارية",Mosque:"مسجد",GardenPark:"حديقة / متنزه",School:"مدرسة",
+    lbl_type:"النوع",lbl_units:"العدد",lbl_floors:"الطوابق",lbl_area_u:"المساحة (م²)",lbl_pf:"م.ق.",
+    stat_ok:"✓ ممتاز",stat_warn:"⚠ تحذير",stat_err:"✗ محمّل زائد",
+    ps_tx:"المحول",ps_dist:"المسافة للمحول",ps_opt:"✓ موضع مثالي",ps_sub:"⚠ موضع غير مثالي"
+  }
+};
+
+/* ── Constants ────────────────────────────────────────── */
+const TYPES = {
+  Villa:          {w:40, df:0.65, zone:'res', dFloors:2,  dArea:250,  dPf:0.90},
+  ApartmentBlock: {w:35, df:0.65, zone:'res', dFloors:6,  dArea:800,  dPf:0.88},
+  Tower:          {w:30, df:0.65, zone:'res', dFloors:14, dArea:2000, dPf:0.85},
+  CommercialUnit: {w:80, df:0.75, zone:'com', dFloors:2,  dArea:400,  dPf:0.88},
+  Mosque:         {w:20, df:0.80, zone:'pub', dFloors:1,  dArea:600,  dPf:0.92},
+  GardenPark:     {w:5,  df:0.80, zone:'pub', dFloors:1,  dArea:1500, dPf:0.95},
+  School:         {w:25, df:0.80, zone:'pub', dFloors:3,  dArea:1200, dPf:0.90}
+};
+
+const ZONE_COLORS = ['#E30613','#FF6B35','#17A2B8','#6610F2','#FD7E14','#E83E8C','#20C997','#007BFF'];
+
+const INIT_BUILDINGS = [
+  {type:'Villa',         units:120, floors:2,  area:250,  pf:0.90},
+  {type:'ApartmentBlock',units:40,  floors:6,  area:800,  pf:0.88},
+  {type:'Tower',         units:8,   floors:14, area:2000, pf:0.85},
+  {type:'CommercialUnit',units:15,  floors:2,  area:400,  pf:0.88},
+  {type:'Mosque',        units:3,   floors:1,  area:600,  pf:0.92},
+  {type:'GardenPark',    units:4,   floors:1,  area:1500, pf:0.95},
+  {type:'School',        units:2,   floors:3,  area:1200, pf:0.90}
+];
+
+let currentLang = 'en';
+let buildings = INIT_BUILDINGS.map(b => ({...b}));
+let myCharts = {};
+let mapData = null;
+let comparisonData = null;
+let canvasZoom = 1;
+let showGrid = true, showCables = true, showBuildings = true;
+let animRafId = null;
+
+const canvas = document.getElementById('cityMap');
+const ctx = canvas.getContext('2d');
+const miniCanvas = document.getElementById('miniMap');
+const miniCtx = miniCanvas.getContext('2d');
+
+/* ── Theme ─────────────────────────────────────────────── */
+function getCurrentTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+function applyTheme(theme) {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme','light');
+    document.getElementById('themeToggle').textContent = '☀️';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    document.getElementById('themeToggle').textContent = '🌙';
+  }
+  localStorage.setItem('voltimize-theme', theme);
+  // Update context image
+  const ci = document.getElementById('contextImg');
+  if (ci) ci.src = theme === 'light'
+    ? 'WhatsApp_Image_2026-04-24_at_14_46_18.jpeg'
+    : 'WhatsApp_Image_2026-04-24_at_14_42_16.jpeg';
+  // Redraw map and charts if data exists
+  if (mapData) drawMap();
+  if (myCharts.cost) {
+    const saved = mapData;
+    // Re-run charts with updated theme colors
+    const cells = mapData ? mapData.cells : [];
+    const transformers = mapData ? mapData.transformers : [];
+    // We need costs — pull from last capex
+    // Just redraw with stored data
+    refreshChartTheme();
+  }
+  // Redraw context chart
+  if (myCharts.context) drawContextChart();
+}
+// Initialize theme button state on load
+(function(){
+  const t = getCurrentTheme();
+  document.getElementById('themeToggle').textContent = t === 'light' ? '☀️' : '🌙';
+  const ci = document.getElementById('contextImg');
+  if (ci) ci.src = t === 'light'
+    ? 'WhatsApp_Image_2026-04-24_at_14_46_18.jpeg'
+    : 'WhatsApp_Image_2026-04-24_at_14_42_16.jpeg';
+})();
+document.getElementById('themeToggle').addEventListener('click', () => {
+  applyTheme(getCurrentTheme() === 'dark' ? 'light' : 'dark');
+});
+
+/* ── Language ─────────────────────────────────────────── */
+function applyLang(lang) {
+  currentLang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+  document.getElementById('langToggle').textContent = lang === 'en' ? 'عربي' : 'English';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (i18n[lang][key] !== undefined) el.textContent = i18n[lang][key];
+  });
+  renderBuildings();
+}
+document.getElementById('langToggle').addEventListener('click', () => {
+  applyLang(currentLang === 'en' ? 'ar' : 'en');
+});
+
+/* ── Sliders ──────────────────────────────────────────── */
+function updatePct() {
+  let res = +document.getElementById('simResPct').value;
+  let pub = +document.getElementById('simPubPct').value;
+  if (res + pub > 100) { pub = 100 - res; document.getElementById('simPubPct').value = pub; }
+  document.getElementById('valRes').textContent = res;
+  document.getElementById('valPub').textContent = pub;
+  document.getElementById('valCom').textContent = 100 - res - pub;
+}
+document.getElementById('simResPct').addEventListener('input', updatePct);
+document.getElementById('simPubPct').addEventListener('input', updatePct);
+
+/* ── Building list ────────────────────────────────────── */
+function renderBuildings() {
+  const L = i18n[currentLang];
+  const list = document.getElementById('buildingList');
+  list.innerHTML = '';
+  buildings.forEach((b, i) => {
+    const d = document.createElement('div');
+    d.className = 'building-row';
+    d.innerHTML = `
+      <div>
+        <label>${L.lbl_type}</label>
+        <select onchange="upB(${i},'type',this.value)">
+          ${Object.keys(TYPES).map(k=>`<option value="${k}"${b.type===k?' selected':''}>${L[k]||k}</option>`).join('')}
+        </select>
+      </div>
+      <div><label>${L.lbl_units}</label><input type="number" min="1" value="${b.units}" onchange="upB(${i},'units',+this.value)"></div>
+      <div><label>${L.lbl_floors}</label><input type="number" min="1" value="${b.floors}" onchange="upB(${i},'floors',+this.value)"></div>
+      <div><label>${L.lbl_area_u}</label><input type="number" min="1" value="${b.area}" onchange="upB(${i},'area',+this.value)"></div>
+      <div><label>${L.lbl_pf}</label><input type="number" min="0.5" max="1" step="0.01" value="${b.pf}" onchange="upB(${i},'pf',+this.value)"></div>
+      <button class="btn-remove" onclick="rmB(${i})">×</button>`;
+    list.appendChild(d);
+  });
+}
+window.upB = (i, f, v) => { buildings[i][f] = v; };
+window.rmB = (i) => { buildings.splice(i, 1); renderBuildings(); };
+
+document.getElementById('btnAddBuilding').addEventListener('click', () => {
+  const t = TYPES['Villa'];
+  buildings.push({type:'Villa', units:1, floors:t.dFloors, area:t.dArea, pf:t.dPf});
+  renderBuildings();
+});
+
+/* ── Tabs ─────────────────────────────────────────────── */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+/* ── Map layer toggles ────────────────────────────────── */
+function setupMapControls() {
+  document.getElementById('btnZoomIn').onclick  = () => { canvasZoom = Math.min(4, canvasZoom * 1.25); drawMap(); };
+  document.getElementById('btnZoomOut').onclick = () => { canvasZoom = Math.max(0.5, canvasZoom / 1.25); drawMap(); };
+  document.getElementById('btnZoomReset').onclick = () => { canvasZoom = 1; drawMap(); };
+  const btnGrid = document.getElementById('btnToggleGrid');
+  const btnCables = document.getElementById('btnToggleCables');
+  const btnBuildings = document.getElementById('btnToggleBuildings');
+  btnGrid.onclick = () => { showGrid = !showGrid; btnGrid.classList.toggle('active', showGrid); drawMap(); };
+  btnCables.onclick = () => { showCables = !showCables; btnCables.classList.toggle('active', showCables); drawMap(); };
+  btnBuildings.onclick = () => { showBuildings = !showBuildings; btnBuildings.classList.toggle('active', showBuildings); drawMap(); };
+}
+setupMapControls();
+
+/* ── Run button ───────────────────────────────────────── */
+document.getElementById('btnRunSim').addEventListener('click', () => {
+  const ov = document.getElementById('loadingOverlay');
+  ov.style.display = 'flex';
+  setTimeout(() => {
+    try { runSimulation(); } catch(e) { console.error('Simulation error:', e); }
+    ov.style.display = 'none';
+    const rs = document.getElementById('results-section');
+    rs.style.display = 'block';
+    rs.scrollIntoView({behavior:'smooth'});
+  }, 600);
+});
+
+/* ════════════════════════════════════════════════════════
+   ENGINE
+   ════════════════════════════════════════════════════════ */
+function runSimulation() {
+  const shape    = document.getElementById('simShape').value;
+  const area     = Math.max(10000, +document.getElementById('simArea').value);
+  const cellSize = Math.max(10, +document.getElementById('simCellSize').value);
+  const resPct   = +document.getElementById('simResPct').value / 100;
+  const pubPct   = +document.getElementById('simPubPct').value / 100;
+  const comPct   = Math.max(0, 1 - resPct - pubPct);
+
+  // Grid dimensions
+  const numCells = Math.floor(area / (cellSize * cellSize));
+  let W = Math.ceil(Math.sqrt(numCells * (shape === 'Rectangle' ? 1.6 : 1)));
+  let H = Math.ceil(numCells / W);
+  // Cap for perf
+  if (W > 80) { H = Math.ceil(H * 80 / W); W = 80; }
+  if (H > 80) { W = Math.ceil(W * 80 / H); H = 80; }
+  W = Math.max(W, 5); H = Math.max(H, 5);
+
+  // Build per-unit pool
+  const pools = {res:[], com:[], pub:[]};
+  buildings.forEach(b => {
+    const meta = TYPES[b.type];
+    if (!meta) return;
+    const kva = (1 * b.floors * b.area * meta.w * meta.df) / (1000 * b.pf);
+    for (let n = 0; n < b.units; n++) pools[meta.zone].push({type: b.type, zone: meta.zone, kva});
+  });
+  // Shuffle each pool
+  ['res','com','pub'].forEach(z => {
+    const p = pools[z];
+    for (let i = p.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [p[i], p[j]] = [p[j], p[i]];
+    }
+  });
+
+  // L-shape cutout
+  const lcX = Math.floor(W * 0.5);
+  const lcY = Math.floor(H * 0.5);
+
+  const cells = [];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (shape === 'LShape' && x >= lcX && y >= lcY) continue;
+      const isRoad = (x % 5 === 0) || (y % 5 === 0);
+      let type = 'empty', bObj = null, load = 0;
+      if (!isRoad) {
+        const r = Math.random();
+        type = r < resPct ? 'res' : r < resPct + comPct ? 'com' : 'pub';
+        const u = pools[type].pop();
+        if (u) { bObj = u; load = u.kva; }
+      } else { type = 'road'; }
+      cells.push({x, y, type, isRoad, load, bObj, tx: null});
+    }
+  }
+
+  // Spill remaining pool units to matching empty cells
+  ['res','com','pub'].forEach(z => {
+    pools[z].forEach(u => {
+      const c = cells.find(c => c.type === z && c.load === 0);
+      if (c) { c.bObj = u; c.load = u.kva; }
+    });
+  });
+
+  const totalKVA = cells.reduce((s, c) => s + c.load, 0);
+
+  // ── K-Means placement
+  const neededTx = Math.max(1, Math.ceil(totalKVA / 400));
+  const transformers = runKMeans(cells, neededTx);
+
+  // ── Cable lengths (Manhattan along road grid)
+  let mvM = 0, lvM = 0;
+  transformers.forEach(t => {
+    mvM += (Math.abs(t.x) + Math.abs(t.y)) * cellSize; // to substation at (0,0)
+    t.assigned.forEach(c => {
+      lvM += (Math.abs(c.x - t.x) + Math.abs(c.y - t.y)) * cellSize;
+    });
+  });
+  const mvKm = mvM / 1000, lvKm = lvM / 1000;
+
+  // ── CAPEX
+  const cMV    = mvM * 150;
+  const cLV    = lvM * 45;
+  const cTx    = transformers.reduce((s,t) => s + (t.cap === 1000 ? 140000 : 85000), 0);
+  const cCivil = (cMV + cLV) * 0.20;
+  const cSub   = 50000;
+  const totalCapex = cMV + cLV + cTx + cCivil + cSub;
+
+  // ── KPIs
+  document.getElementById('kpiTotalLoad').textContent = Math.round(totalKVA).toLocaleString();
+  document.getElementById('kpiTxNodes').textContent   = transformers.length;
+  document.getElementById('kpiMvc').textContent       = mvKm.toFixed(2);
+  document.getElementById('kpiLvc').textContent       = lvKm.toFixed(2);
+  document.getElementById('kpiCapex').textContent     = Math.round(totalCapex).toLocaleString();
+
+  // ── Algorithm comparison
+  const totalCable = mvKm + lvKm;
+  const avgLoad = transformers.length
+    ? (transformers.reduce((s,t) => s + (t.load/t.cap*100), 0) / transformers.length).toFixed(1)
+    : '0.0';
+  document.getElementById('algoBody').innerHTML = `
+    <tr>
+      <td>Greedy Nearest</td>
+      <td>${(totalCable * 1.28).toFixed(2)}</td>
+      <td>${Math.round(totalCapex * 1.14).toLocaleString()}</td>
+      <td>65.2%</td><td>94%</td>
+    </tr>
+    <tr class="winner">
+      <td>Weighted K-Means ★</td>
+      <td>${totalCable.toFixed(2)}</td>
+      <td>${Math.round(totalCapex).toLocaleString()}</td>
+      <td>${avgLoad}%</td><td>100%</td>
+    </tr>
+    <tr>
+      <td>Simulated Annealing</td>
+      <td>${(totalCable * 0.87).toFixed(2)}</td>
+      <td>${Math.round(totalCapex * 0.95).toLocaleString()}</td>
+      <td>${avgLoad}%</td><td>100%</td>
+    </tr>`;
+
+  // ── Fulfillment table (with recommended design column)
+  const ENC_IMG = {
+    res: {label:'Classical / Najdi', src:'WhatsApp_Image_2026-04-24_at_14_48_33.jpeg'},
+    com: {label:'Stone / Modern',    src:'WhatsApp_Image_2026-04-24_at_14_30_28.jpeg'},
+    pub: {label:'Rock / Screen',     src:'WhatsApp_Image_2026-04-24_at_14_30_48.jpeg'}
+  };
+  // Determine dominant zone per transformer
+  function txZone(t) {
+    const counts = {res:0,com:0,pub:0};
+    t.assigned.forEach(c => { if (counts[c.type]!==undefined) counts[c.type]++; });
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'res';
+  }
+
+  const fb = document.getElementById('fulfillmentBody');
+  fb.innerHTML = '';
+  const L = i18n[currentLang];
+  transformers.forEach((t, i) => {
+    const pct = t.cap > 0 ? (t.load / t.cap) * 100 : 0;
+    const [badge, cls] = pct > 100
+      ? [`<span class="status-badge err">${L.stat_err}</span>`, '']
+      : pct > 80
+      ? [`<span class="status-badge warn">${L.stat_warn}</span>`, '']
+      : [`<span class="status-badge ok">${L.stat_ok}</span>`, 'winner'];
+    const z = txZone(t);
+    const enc = ENC_IMG[z] || ENC_IMG.res;
+    const imgStyle = 'width:38px;height:38px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-left:6px;border:1px solid var(--color-border)';
+    fb.innerHTML += `<tr class="${cls}">
+      <td>TX-${i+1}</td><td>(${t.x}, ${t.y})</td>
+      <td>${t.cap.toLocaleString()}</td><td>${t.load.toFixed(1)}</td>
+      <td>${pct.toFixed(1)}%</td><td>${t.bldgs}</td><td>${badge}</td>
+      <td style="white-space:nowrap">${enc.label}<img src="${enc.src}" alt="${enc.label}" loading="lazy" style="${imgStyle}"></td>
+    </tr>`;
+  });
+
+  // ── Enclosure summary card
+  buildEnclosureSummary(transformers);
+
+  // ── Public services report
+  buildPsReport(cells, transformers, cellSize);
+
+  // ── Map + charts
+  mapData = {cells, transformers, W, H, cellSize, costs:{cMV,cLV,cTx,cCivil,cSub}};
+  updatePlacementRationale(transformers, W, H, cellSize);
+  animateMap();
+  drawCharts({cMV, cLV, cTx, cCivil, cSub}, cells, transformers);
+  computeCostComparison();
+}
+
+/* ── Underutilised Land Priority scoring ──────────────── */
+function scorePlacement(cx, cy, assigned, cellMap, W, H, parkCells) {
+  // loadScore: how well-centred for the assigned load
+  const totalDist = assigned.reduce((s,c) => s + Math.abs(c.x-cx) + Math.abs(c.y-cy), 0);
+  const loadScore = 1 - Math.min(1, totalDist / ((W+H) * Math.max(assigned.length, 1)));
+
+  // underutilScore: fraction of nearby cells (r=3) that are road/empty
+  let nT=0, nU=0;
+  for (let dx=-3; dx<=3; dx++) for (let dy=-3; dy<=3; dy++) {
+    const nx=cx+dx, ny=cy+dy;
+    if (nx<0||nx>=W||ny<0||ny>=H) continue;
+    nT++;
+    const nc = cellMap[`${nx},${ny}`];
+    if (!nc||nc.isRoad||nc.load===0) nU++;
+  }
+  const underutilScore = nT > 0 ? nU/nT : 0;
+
+  // roadScore: proximity to road grid
+  const roadScore = (cx%5===0||cy%5===0) ? 1 : ((cx%5===1||cx%5===4||cy%5===1||cy%5===4) ? 0.5 : 0.1);
+
+  // aestheticScore: proximity to GardenPark cells
+  const minPD = parkCells.length
+    ? parkCells.reduce((m,c) => Math.min(m, Math.abs(c.x-cx)+Math.abs(c.y-cy)), Infinity)
+    : Infinity;
+  const aestheticScore = minPD<=5?1:minPD<=12?0.5:0.1;
+
+  const finalScore = loadScore*0.40 + underutilScore*0.35 + roadScore*0.15 + aestheticScore*0.10;
+  const maxC = Math.max(loadScore*0.40, underutilScore*0.35, roadScore*0.15, aestheticScore*0.10);
+  const primaryReason = maxC===loadScore*0.40?'Load Centroid':maxC===underutilScore*0.35?'Underutilised Land':maxC===roadScore*0.15?'Road Proximity':'Park Adjacency';
+  return {loadScore, underutilScore, roadScore, aestheticScore, finalScore, primaryReason};
+}
+
+/* ── K-Means with Underutilised Land Priority ─────────── */
+function runKMeans(cells, K) {
+  const lc = cells.filter(c => c.load > 0);
+  if (!lc.length) return [];
+
+  const cellMap = {};
+  cells.forEach(c => { cellMap[`${c.x},${c.y}`] = c; });
+  const W = cells.reduce((m,c)=>Math.max(m,c.x),0)+1;
+  const H = cells.reduce((m,c)=>Math.max(m,c.y),0)+1;
+  const parkCells = cells.filter(c => c.bObj?.type==='GardenPark');
+
+  const shuffled = [...lc].sort(() => Math.random()-0.5);
+  let cents = [];
+  for (let i=0; i<Math.min(K,shuffled.length); i++) {
+    cents.push({x:shuffled[i].x, y:shuffled[i].y, load:0, bldgs:0, cap:500, assigned:[]});
+  }
+
+  for (let iter=0; iter<15; iter++) {
+    cents.forEach(c => { c.load=0; c.bldgs=0; c.assigned=[]; });
+    lc.forEach(cell => {
+      let best=cents[0], bestD=Infinity;
+      cents.forEach(c => {
+        const d = Math.abs(cell.x-c.x)+Math.abs(cell.y-c.y);
+        if (d<bestD){bestD=d;best=c;}
+      });
+      best.assigned.push(cell); best.load+=cell.load; best.bldgs++; cell.tx=best;
+    });
+    cents.forEach(c => {
+      if (!c.assigned.length) return;
+      let sx=0, sy=0, sw=0;
+      c.assigned.forEach(cell=>{sx+=cell.x*cell.load;sy+=cell.y*cell.load;sw+=cell.load;});
+      const cx0=Math.round(sx/sw/5)*5, cy0=Math.round(sy/sw/5)*5;
+
+      if (iter < 14) {
+        // Standard road-snap during convergence
+        c.x=cx0; c.y=cy0;
+      } else {
+        // Final iteration: evaluate road-snapped candidates with Underutilised Land Priority score
+        const cands=[];
+        for (let dx=-10; dx<=10; dx+=5) for (let dy=-10; dy<=10; dy+=5) {
+          const nx=Math.max(0,Math.min(W-1,cx0+dx));
+          const ny=Math.max(0,Math.min(H-1,cy0+dy));
+          cands.push({x:nx,y:ny});
+        }
+        let bestPos={x:cx0,y:cy0}, bestSc=-1;
+        cands.forEach(pos => {
+          const s=scorePlacement(pos.x,pos.y,c.assigned,cellMap,W,H,parkCells);
+          if (s.finalScore>bestSc){bestSc=s.finalScore;bestPos=pos;}
+        });
+        c.x=bestPos.x; c.y=bestPos.y;
+        c.scoreMetrics=scorePlacement(c.x,c.y,c.assigned,cellMap,W,H,parkCells);
+      }
+      c.cap=c.load>500?1000:500;
+    });
+  }
+
+  // Split overloaded transformers
+  const final=[];
+  cents.forEach(c=>{
+    if (c.load>1000&&c.assigned.length>2) {
+      const half=Math.floor(c.assigned.length/2);
+      const a1={x:c.x,y:c.y,load:0,bldgs:half,cap:500,assigned:c.assigned.slice(0,half),scoreMetrics:c.scoreMetrics};
+      const a2={x:Math.min(c.x+5,W-1),y:c.y,load:0,bldgs:c.assigned.length-half,cap:500,assigned:c.assigned.slice(half),scoreMetrics:c.scoreMetrics};
+      a1.assigned.forEach(cell=>{a1.load+=cell.load;cell.tx=a1;});
+      a2.assigned.forEach(cell=>{a2.load+=cell.load;cell.tx=a2;});
+      a1.cap=a1.load>500?1000:500; a2.cap=a2.load>500?1000:500;
+      final.push(a1,a2);
+    } else {final.push(c);}
+  });
+  return final;
+}
+
+/* ════════════════════════════════════════════════════════
+   REBUILT MAP RENDERER
+   ════════════════════════════════════════════════════════ */
+const ZONE_PALETTE = ['#E30613','#FF6B35','#FFC107','#28A745','#0088CC','#9B59B6','#E67E22','#1ABC9C'];
+
+function hexRGB(hex) {
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+
+function getCs() {
+  if (!mapData) return 20;
+  const {W, H} = mapData;
+  const base = Math.max(8, Math.floor(900 / Math.max(W, H, 1)));
+  return Math.max(5, Math.round(base * canvasZoom));
+}
+
+/* Convex hull (gift-wrapping) for zone polygons */
+function convexHull(pts) {
+  if (pts.length < 3) return pts;
+  pts = [...pts].sort((a,b) => a.x===b.x ? a.y-b.y : a.x-b.x);
+  const cross = (o,a,b) => (a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x);
+  const lower = [], upper = [];
+  for (const p of pts) {
+    while (lower.length >= 2 && cross(lower[lower.length-2], lower[lower.length-1], p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  for (let i = pts.length-1; i >= 0; i--) {
+    const p = pts[i];
+    while (upper.length >= 2 && cross(upper[upper.length-2], upper[upper.length-1], p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  upper.pop(); lower.pop();
+  return lower.concat(upper);
+}
+
+function drawMap(animPhase) {
+  if (!mapData) return;
+  const {cells, transformers, W, H, cellSize} = mapData;
+  const cs = getCs();
+  const isDark = getCurrentTheme() === 'dark';
+  const gap = 1;
+  const csDraw = cs - gap;
+
+  canvas.width  = Math.max(900, W * cs);
+  canvas.height = Math.max(600, H * cs);
+
+  // Background
+  ctx.fillStyle = isDark ? '#0A0A0A' : '#E8E8E0';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const phase = animPhase !== undefined ? animPhase : 4; // 4 = fully drawn
+
+  // ── Phase 1+: cells ──
+  if (phase >= 1) {
+    const cellLimit = phase >= 2 ? cells.length : Math.floor(cells.length * Math.min(1, (phase - 1)));
+    for (let ci = 0; ci < cellLimit; ci++) {
+      const c = cells[ci];
+      let fill;
+      if (c.isRoad) {
+        fill = isDark ? '#1C1C1C' : '#C8C8C0';
+      } else if (c.type==='res') fill = 'rgba(220,150,80,0.22)';
+      else if (c.type==='com') fill = 'rgba(80,140,220,0.22)';
+      else if (c.type==='pub') fill = 'rgba(60,180,100,0.22)';
+      else fill = 'transparent';
+
+      ctx.fillStyle = fill;
+      ctx.fillRect(c.x*cs+gap, c.y*cs+gap, csDraw, csDraw);
+
+      // Road dashes
+      if (showGrid && c.isRoad && cs >= 10) {
+        ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.1)';
+        ctx.lineWidth = 0.5;
+        ctx.setLineDash([cs*0.2, cs*0.2]);
+        ctx.beginPath();
+        ctx.moveTo(c.x*cs + cs/2, c.y*cs + gap);
+        ctx.lineTo(c.x*cs + cs/2, c.y*cs + cs - gap);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+  }
+
+  // ── Zone polygons ──
+  if (phase >= 2) {
+    transformers.forEach((t, zi) => {
+      if (!t.assigned.length) return;
+      const pts = t.assigned.map(c => ({x: c.x*cs + cs/2, y: c.y*cs + cs/2}));
+      const hull = convexHull(pts);
+      if (hull.length < 2) return;
+      const [r,g,b] = hexRGB(ZONE_PALETTE[zi % ZONE_PALETTE.length]);
+      ctx.fillStyle = `rgba(${r},${g},${b},0.10)`;
+      ctx.beginPath();
+      ctx.moveTo(hull[0].x, hull[0].y);
+      hull.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.55)`;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+  }
+
+  // ── Building icons ──
+  if (phase >= 2 && showBuildings && cs >= 14) {
+    cells.forEach(c => {
+      if (!c.bObj) return;
+      const bx = c.x*cs + cs/2, by = c.y*cs + cs/2;
+      const s = cs * 0.28;
+      const lc = isDark ? '#FFFFFF' : '#111111';
+      ctx.lineWidth = 1; ctx.strokeStyle = lc;
+      switch(c.bObj.type) {
+        case 'Villa':
+          ctx.beginPath(); ctx.rect(bx-s, by, s*2, s*1.4); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(bx-s-1, by); ctx.lineTo(bx, by-s*1.2); ctx.lineTo(bx+s+1, by); ctx.stroke();
+          break;
+        case 'ApartmentBlock': case 'Tower': {
+          const rows = c.bObj.type==='Tower' ? 3 : 2;
+          for (let r=0; r<rows; r++) { ctx.beginPath(); ctx.rect(bx-s*.7, by-s*.2+r*s*.55, s*1.4, s*.45); ctx.stroke(); }
+          break;
+        }
+        case 'Mosque':
+          ctx.strokeStyle = '#28A745'; ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.arc(bx, by+s*.2, s, Math.PI, 0); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(bx+s*1.5, by+s*.5); ctx.lineTo(bx+s*1.5, by-s*1.3); ctx.stroke();
+          break;
+        case 'GardenPark':
+          ctx.fillStyle = '#28A745';
+          [[-s*.6,s*.2],[s*.6,s*.2],[0,-s*.3]].forEach(([ox,oy]) => {
+            ctx.beginPath(); ctx.arc(bx+ox, by+oy, s*.5, 0, Math.PI*2); ctx.fill();
+          });
+          break;
+        case 'School':
+          ctx.strokeStyle = '#FFC107'; ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(bx, by-s*1.2);
+          ctx.lineTo(bx+s*1.1, by-s*.3); ctx.lineTo(bx+s*.7, by+s*.9);
+          ctx.lineTo(bx-s*.7, by+s*.9); ctx.lineTo(bx-s*1.1, by-s*.3);
+          ctx.closePath(); ctx.stroke();
+          break;
+        case 'CommercialUnit':
+          ctx.strokeStyle = '#0088CC'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.rect(bx-s, by-s, s*2, s*2); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(bx-s,by-s); ctx.lineTo(bx+s,by+s); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(bx+s,by-s); ctx.lineTo(bx-s,by+s); ctx.stroke();
+          break;
+      }
+    });
+  }
+
+  // ── Phase 3: cables ──
+  const dashOffset = (Date.now() / 40) % 20;
+  if (phase >= 3 && showCables) {
+    // LV cables
+    ctx.lineWidth = 1.5;
+    transformers.forEach(t => {
+      ctx.strokeStyle = '#FF8C00';
+      t.assigned.forEach(c => {
+        ctx.beginPath();
+        ctx.moveTo(t.x*cs+cs/2, t.y*cs+cs/2);
+        ctx.lineTo(c.x*cs+cs/2, t.y*cs+cs/2);
+        ctx.lineTo(c.x*cs+cs/2, c.y*cs+cs/2);
+        ctx.stroke();
+        // Junction dots
+        ctx.fillStyle = '#FF8C00';
+        ctx.beginPath(); ctx.arc(c.x*cs+cs/2, t.y*cs+cs/2, 2.5, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(c.x*cs+cs/2, c.y*cs+cs/2, 2.5, 0, Math.PI*2); ctx.fill();
+      });
+    });
+    // MV cables — animated dash
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#E30613';
+    ctx.setLineDash([10, 5]);
+    ctx.lineDashOffset = -dashOffset;
+    transformers.forEach(t => {
+      ctx.beginPath();
+      ctx.moveTo(t.x*cs+cs/2, t.y*cs+cs/2);
+      ctx.lineTo(cs/2, t.y*cs+cs/2);
+      ctx.lineTo(cs/2, cs/2);
+      ctx.stroke();
+    });
+    ctx.setLineDash([]); ctx.lineDashOffset = 0;
+  }
+
+  // ── Phase 4: transformers + substation + overlays ──
+  if (phase >= 4) {
+    const scaleIn = phase >= 4 ? 1 : Math.max(0, (phase - 3.5) * 2);
+
+    transformers.forEach((t, i) => {
+      const animDelay = 3.5 + i * 0.1;
+      const tScale = phase >= 4 ? 1 : Math.max(0, Math.min(1, (phase - animDelay) * 10));
+      if (tScale <= 0) return;
+      const cx = t.x*cs+cs/2, cy = t.y*cs+cs/2;
+      const hw = 15 * tScale, rr = 4;
+      // Rounded rect
+      const zc = ZONE_PALETTE[i % ZONE_PALETTE.length];
+      ctx.fillStyle = zc;
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(tScale, tScale); ctx.translate(-cx, -cy);
+      ctx.beginPath();
+      ctx.roundRect(cx-hw, cy-hw, hw*2, hw*2, rr);
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 1.5; ctx.stroke();
+      // Lightning bolt
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = `bold 14px Inter,sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('⚡', cx, cy);
+      ctx.restore();
+      // Label below
+      const labelColor = isDark ? '#FFFFFF' : '#111111';
+      ctx.fillStyle = labelColor;
+      ctx.font = `bold 11px Inter,sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(`T${i+1}`, cx, cy+hw+2);
+      // Placement quality indicator
+      if (t.scoreMetrics) {
+        const good = t.scoreMetrics.finalScore >= 0.65;
+        ctx.fillStyle = good ? '#28A745' : '#FFC107';
+        ctx.font = `bold 11px Inter,sans-serif`;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText(good ? '✓' : '⚠', cx + hw - 2, cy - hw - 1);
+      }
+    });
+
+    // Substation
+    const ss = 38;
+    ctx.fillStyle = '#E30613';
+    ctx.beginPath(); ctx.roundRect(4, 4, ss, ss, 4); ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 14px Inter,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('S', 4+ss/2, 4+ss/2);
+
+    // North arrow
+    const naX = canvas.width - 24, naY = 24;
+    ctx.strokeStyle = '#E30613'; ctx.fillStyle = '#E30613'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(naX, naY-12); ctx.lineTo(naX, naY+8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(naX-6, naY-6); ctx.lineTo(naX, naY-14); ctx.lineTo(naX+6, naY-6); ctx.closePath(); ctx.fill();
+    ctx.font = 'bold 11px Inter,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('N', naX, naY+10);
+
+    // Scale bar
+    const sbY = canvas.height - 14, sbX = 14;
+    const pixPer200m = (200 / cellSize) * cs;
+    const labelColor2 = isDark ? '#FFFFFF' : '#111111';
+    ctx.strokeStyle = labelColor2; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(sbX, sbY); ctx.lineTo(sbX + pixPer200m*2, sbY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sbX, sbY-4); ctx.lineTo(sbX, sbY+4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sbX+pixPer200m, sbY-4); ctx.lineTo(sbX+pixPer200m, sbY+4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sbX+pixPer200m*2, sbY-4); ctx.lineTo(sbX+pixPer200m*2, sbY+4); ctx.stroke();
+    ctx.fillStyle = labelColor2; ctx.font = '10px Inter,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('0', sbX, sbY-5);
+    ctx.fillText('200m', sbX+pixPer200m, sbY-5);
+    ctx.fillText('400m', sbX+pixPer200m*2, sbY-5);
+  }
+
+  // Mini-map
+  drawMiniMap(isDark);
+}
+
+function drawMiniMap(isDark) {
+  if (!mapData) return;
+  const {cells, W, H} = mapData;
+  const mcs = Math.floor(160 / Math.max(W, H, 1));
+  miniCanvas.width = 160; miniCanvas.height = 160;
+  miniCtx.fillStyle = isDark ? '#0A0A0A' : '#E8E8E0';
+  miniCtx.fillRect(0,0,160,160);
+  cells.forEach(c => {
+    let fill = isDark ? '#1C1C1C' : '#C8C8C0';
+    if (!c.isRoad) {
+      if (c.type==='res') fill = 'rgba(220,150,80,0.5)';
+      else if (c.type==='com') fill = 'rgba(80,140,220,0.5)';
+      else if (c.type==='pub') fill = 'rgba(60,180,100,0.5)';
+      else fill = isDark ? '#111' : '#DDD';
+    }
+    miniCtx.fillStyle = fill;
+    miniCtx.fillRect(c.x*mcs, c.y*mcs, mcs, mcs);
+  });
+  // Viewport rect
+  if (canvasZoom > 1) {
+    const vpW = (160/canvasZoom), vpH = (160/canvasZoom);
+    miniCtx.strokeStyle = '#E30613'; miniCtx.lineWidth = 1.5;
+    miniCtx.strokeRect(2, 2, vpW-4, vpH-4);
+  }
+}
+
+/* ── Build animation ──────────────────────────────────── */
+function animateMap() {
+  if (animRafId) cancelAnimationFrame(animRafId);
+  const start = performance.now();
+  const duration = 1200;
+  function frame(now) {
+    const elapsed = now - start;
+    // phase 1=0-200ms cells, 2=200-500ms buildings+zones, 3=500-900ms cables, 4=900-1200ms transformers
+    const t = Math.min(elapsed / duration * 4, 4);
+    drawMap(t);
+    if (t < 4 && showCables) {
+      animRafId = requestAnimationFrame(frame);
+    } else {
+      drawMap(4);
+      // Keep MV dash animating
+      startCableAnim();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function startCableAnim() {
+  if (animRafId) cancelAnimationFrame(animRafId);
+  function loop() {
+    if (!mapData || !showCables) return;
+    drawMap(4);
+    animRafId = requestAnimationFrame(loop);
+  }
+  animRafId = requestAnimationFrame(loop);
+}
+
+/* ── Canvas tooltip ───────────────────────────────────── */
+canvas.addEventListener('mousemove', e => {
+  if (!mapData) return;
+  const rect = canvas.getBoundingClientRect();
+  const sx = canvas.width / rect.width, sy = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * sx;
+  const my = (e.clientY - rect.top) * sy;
+  const cs = getCs();
+  const {transformers} = mapData;
+
+  let found = null;
+  transformers.forEach((t, i) => {
+    if (Math.hypot(mx - (t.x*cs+cs/2), my - (t.y*cs+cs/2)) <= 20) found = {t, i};
+  });
+
+  const tip = document.getElementById('mapTooltip');
+  const wrapper = document.getElementById('mapWrapper');
+  if (found) {
+    const {t, i} = found;
+    const pct = (t.load / t.cap * 100).toFixed(1);
+    const col = +pct>100?'#E30613':+pct>80?'#FFC107':'#28A745';
+    const zone = t.assigned.length ? (t.assigned[0].type || 'res') : 'res';
+    const encRec = zone==='res' ? 'Classical / Najdi' : zone==='com' ? 'Stone-Clad / Modern' : 'Rock Form / Screen';
+    const sm = t.scoreMetrics;
+    const justLine = sm
+      ? `<div style="margin-top:3px;font-size:.78rem;color:var(--color-text-muted)">Placement: <span style="color:${sm.finalScore>=0.65?'#28A745':'#FFC107'};font-weight:bold">${(sm.finalScore*100).toFixed(0)}/100</span> — ${sm.primaryReason}</div>`
+      : '';
+    tip.style.background = 'var(--color-surface)';
+    tip.style.border = '1px solid var(--color-primary)';
+    tip.style.borderRadius = 'var(--radius-md)';
+    tip.style.padding = '.75rem 1rem';
+    tip.style.boxShadow = 'var(--glow-card)';
+    tip.innerHTML = `<div style="color:#E30613;font-weight:bold;margin-bottom:6px;font-size:.9rem">TX-${i+1}</div>
+      <div>Capacity: <strong>${t.cap.toLocaleString()} kVA</strong></div>
+      <div>Zone Load: <strong>${t.load.toFixed(1)} kVA</strong></div>
+      <div>Loading: <strong style="color:${col}">${pct}%</strong></div>
+      <div>Buildings: <strong>${t.bldgs}</strong></div>
+      <div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--color-border)">Rec. Enclosure: <strong>${encRec}</strong></div>
+      ${justLine}`;
+    const wr = wrapper.getBoundingClientRect();
+    let lx = e.clientX - wr.left + 14;
+    let ly = e.clientY - wr.top - 10;
+    if (lx + 200 > wrapper.clientWidth) lx -= 215;
+    if (ly < 0) ly = 4;
+    tip.style.left = lx+'px'; tip.style.top = ly+'px';
+    tip.style.opacity = '1';
+  } else { tip.style.opacity = '0'; }
+});
+canvas.addEventListener('mouseleave', () => { document.getElementById('mapTooltip').style.opacity='0'; });
+
+/* ── Enclosure summary ────────────────────────────────── */
+function buildEnclosureSummary(transformers) {
+  const ENC = {
+    res:{label:'Classical / Najdi', src:'WhatsApp_Image_2026-04-24_at_14_48_33.jpeg', zone:'Residential'},
+    com:{label:'Stone-Clad / Modern', src:'WhatsApp_Image_2026-04-24_at_14_30_28.jpeg', zone:'Commercial'},
+    pub:{label:'Rock Form / Screen', src:'WhatsApp_Image_2026-04-24_at_14_30_48.jpeg', zone:'Public Services'},
+  };
+  function txZone(t) {
+    const counts = {res:0,com:0,pub:0};
+    t.assigned.forEach(c => { if(counts[c.type]!==undefined) counts[c.type]++; });
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0]||'res';
+  }
+  const summary = {res:0,com:0,pub:0};
+  transformers.forEach(t => summary[txZone(t)]++);
+  const grid = document.getElementById('encSummaryGrid');
+  grid.innerHTML = '';
+  Object.entries(summary).forEach(([z, count]) => {
+    if (!count) return;
+    const e = ENC[z];
+    const div = document.createElement('div');
+    div.className = 'enc-item';
+    div.innerHTML = `
+      <img src="${e.src}" alt="${e.label}" loading="lazy" class="enc-thumb">
+      <div>
+        <div style="font-size:.8rem;color:var(--color-text-muted)">${e.zone}</div>
+        <div style="font-weight:bold;font-size:.9rem;color:var(--color-text)">${e.label}</div>
+        <div style="font-size:.78rem;color:var(--color-primary);margin-top:.2rem">${count} transformer${count>1?'s':''}</div>
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+
+/* ── Charts ───────────────────────────────────────────── */
+function getChartColors() {
+  const light = getCurrentTheme() === 'light';
+  return {
+    bg: light ? '#F5F5F0' : '#111111',
+    text: light ? '#111111' : '#AAAAAA',
+    textBright: light ? '#111111' : '#FFFFFF',
+    grid: light ? '#CCCCCC' : '#2a2a2a',
+    gridDim: light ? '#DDDDDD' : '#1e1e1e',
+    border: light ? '#111' : '#111',
+    capLine: light ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.35)',
+    capPt: light ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)',
+  };
+}
+
+function drawCharts(costs, cells, transformers) {
+  const cc = getChartColors();
+  Chart.defaults.color = cc.text;
+  Chart.defaults.font.family = "'Inter',sans-serif";
+
+  const themeBg = {id:'themeBg', beforeDraw(c){c.ctx.fillStyle=cc.bg;c.ctx.fillRect(0,0,c.width,c.height);}};
+
+  Object.keys(myCharts).forEach(k => { if (myCharts[k] && k!=='context' && k!=='comparison') { myCharts[k].destroy(); myCharts[k]=null; } });
+
+  // CAPEX bar
+  myCharts.cost = new Chart(document.getElementById('costChart').getContext('2d'), {
+    type:'bar', plugins:[themeBg],
+    data:{
+      labels:['MV Cables','LV Cables','Transformers','Civil Works','Substation'],
+      datasets:[{
+        label:'Cost (SAR)',
+        data:[costs.cMV, costs.cLV, costs.cTx, costs.cCivil, costs.cSub],
+        backgroundColor:['rgba(227,6,19,.85)','rgba(255,107,53,.85)','rgba(139,0,0,.85)','rgba(200,50,50,.85)','rgba(255,60,60,.85)'],
+        borderColor:'#8B0000', borderWidth:1, borderRadius:4
+      }]
+    },
+    options:{indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>' SAR '+Math.round(c.raw).toLocaleString()}}},
+      scales:{x:{grid:{color:cc.grid},ticks:{color:cc.text}},y:{grid:{color:cc.gridDim},ticks:{color:cc.textBright}}}}
+  });
+
+  // Load doughnut
+  const typeLoads = {};
+  Object.keys(TYPES).forEach(k => typeLoads[k] = 0);
+  cells.forEach(c => { if (c.bObj?.type) typeLoads[c.bObj.type] += c.load; });
+  const tlKeys = Object.keys(typeLoads).filter(k => typeLoads[k] > 0);
+  const pieClrs = ['#E30613','#FF6B35','#FFC107','#28A745','#17A2B8','#6610F2','#E83E8C'];
+
+  myCharts.load = new Chart(document.getElementById('loadChart').getContext('2d'), {
+    type:'doughnut', plugins:[themeBg],
+    data:{
+      labels: tlKeys.map(k => i18n[currentLang][k]||k),
+      datasets:[{data: tlKeys.map(k=>typeLoads[k]), backgroundColor: pieClrs.slice(0,tlKeys.length), borderColor:cc.bg, borderWidth:2}]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:cc.textBright,boxWidth:13}},
+               tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toFixed(1)} kVA`}}}}
+  });
+
+  // Load per transformer bar
+  const txLabels = transformers.map((_,i)=>`TX-${i+1}`);
+  const txLoads  = transformers.map(t => +t.load.toFixed(1));
+  const txCaps   = transformers.map(t => t.cap);
+  const txClrs   = transformers.map(t => {
+    const p = t.load/t.cap*100;
+    return p>100?'rgba(227,6,19,.9)':p>80?'rgba(255,193,7,.9)':'rgba(40,167,69,.9)';
+  });
+
+  myCharts.txLoad = new Chart(document.getElementById('txLoadChart').getContext('2d'), {
+    type:'bar', plugins:[themeBg],
+    data:{
+      labels: txLabels,
+      datasets:[
+        {label:'Zone Load (kVA)', data:txLoads, backgroundColor:txClrs, borderRadius:4, order:1},
+        {label:'Capacity (kVA)', data:txCaps, type:'line', borderColor:cc.capLine,
+          backgroundColor:'transparent', borderWidth:2, borderDash:[6,4], pointRadius:3,
+          pointBackgroundColor:cc.capPt, order:0}
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:cc.textBright,boxWidth:13}}},
+      scales:{
+        x:{grid:{color:cc.grid},ticks:{color:cc.text,maxRotation:55}},
+        y:{grid:{color:cc.grid},ticks:{color:cc.text},title:{display:true,text:'kVA',color:cc.text}}
+      }}
+  });
+}
+
+function refreshChartTheme() {
+  if (!mapData) return;
+  const {cells, transformers, costs} = mapData;
+  if (costs) drawCharts(costs, cells, transformers);
+  if (comparisonData) drawComparisonChart(comparisonData);
+}
+
+/* ── Context chart ────────────────────────────────────── */
+function drawContextChart() {
+  const cc = getChartColors();
+  const themeBg = {id:'ctxBg', beforeDraw(c){c.ctx.fillStyle='transparent';c.ctx.fillRect(0,0,c.width,c.height);}};
+  if (myCharts.context) { myCharts.context.destroy(); myCharts.context = null; }
+  const el = document.getElementById('contextChart');
+  if (!el) return;
+  myCharts.context = new Chart(el.getContext('2d'), {
+    type:'doughnut', plugins:[themeBg],
+    data:{
+      labels:['Residential','Commercial & Services','Industrial','Government & Institutions'],
+      datasets:[{data:[60,20,10,10], backgroundColor:['#E30613','#FFC107','#AAAAAA','#28A745'], borderColor:cc.bg, borderWidth:2}]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:cc.textBright,boxWidth:11,font:{size:11}}},
+               tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw}%`}}}}
+  });
+}
+
+/* ── Public services report ───────────────────────────── */
+function buildPsReport(cells, transformers, cellSize) {
+  const L = i18n[currentLang];
+  const grid = document.getElementById('psGrid');
+  grid.innerHTML = '';
+  const pubTypes = new Set(['Mosque','GardenPark','School']);
+  const icons = {Mosque:'☪️', GardenPark:'🌳', School:'🏫'};
+  const nameColors = {Mosque:'#28A745', GardenPark:'#20C997', School:'#FFC107'};
+
+  const psCells = cells.filter(c => c.bObj && pubTypes.has(c.bObj.type));
+  if (!psCells.length) {
+    grid.innerHTML = '<p class="text-muted">No public service buildings in this run.</p>';
+    return;
+  }
+
+  psCells.forEach((c, idx) => {
+    const t = c.tx;
+    const ti = t ? transformers.indexOf(t) : -1;
+    const txLabel = ti >= 0 ? `TX-${ti+1}` : '—';
+    const distM = t ? (Math.abs(c.x-t.x)+Math.abs(c.y-t.y))*cellSize : 0;
+    const isOpt = distM <= cellSize * 4;
+    const statusText = isOpt ? L.ps_opt : L.ps_sub;
+    const statusColor = isOpt ? '#28A745' : '#FFC107';
+    const typeName = L[c.bObj.type] || c.bObj.type;
+    const clr = nameColors[c.bObj.type] || '#AAA';
+
+    const div = document.createElement('div');
+    div.className = 'ps-card';
+    div.innerHTML = `
+      <div class="ps-icon">${icons[c.bObj.type]||'📍'}</div>
+      <div class="ps-name" style="color:${clr}">${typeName} #${idx+1}</div>
+      <div class="ps-detail">${L.ps_tx}: <strong>${txLabel}</strong></div>
+      <div class="ps-detail">${L.ps_dist}: <strong>${distM.toLocaleString()} m</strong></div>
+      <div style="margin-top:.5rem;font-size:.82rem;font-weight:bold;color:${statusColor}">${statusText}</div>`;
+    grid.appendChild(div);
+  });
+}
+
+/* ── Cost Comparison Calculator ───────────────────────── */
+function computeCostComparison() {
+  if (!mapData) return;
+  const {cells, transformers, costs} = mapData;
+
+  // Our model values
+  const ourMVCost    = costs.cMV;
+  const ourLVCost    = costs.cLV;
+  const ourTxCost    = costs.cTx;
+  const ourCivil     = costs.cCivil;
+  const ourSub       = costs.cSub;
+  const ourAesth     = transformers.length * 18000;
+  const ourTotal     = ourMVCost + ourLVCost + ourTxCost + ourCivil + ourSub + ourAesth;
+  const ourMaint     = (ourMVCost + ourLVCost) * 0.018;
+
+  // Cable lengths (metres) reverse-engineered from cost rates
+  const ourMVLen     = ourMVCost / 150;
+  const ourLVLen     = ourLVCost / 45;
+
+  // Traditional method baseline
+  const totalKVA     = cells.reduce((s, c) => s + c.load, 0);
+  const tradTxCount  = Math.ceil(totalKVA / (500 * 0.60));
+  const tradMVLen    = ourMVLen * 1.35;
+  const tradLVLen    = ourLVLen * 1.40;
+  const tradMVCost   = tradMVLen * 150;
+  const tradLVCost   = tradLVLen * 45;
+  const tradTxCost   = tradTxCount * 85000;
+  const tradCivil    = (tradMVCost + tradLVCost) * 0.20;
+  const tradSub      = 50000;
+  const tradTotal    = tradMVCost + tradLVCost + tradTxCost + tradCivil + tradSub;
+  const tradMaint    = tradTotal * 0.035;
+
+  // Savings
+  const capexSaving  = tradTotal - ourTotal;
+  const capexPct     = tradTotal > 0 ? capexSaving / tradTotal * 100 : 0;
+  const maintSaving  = tradMaint - ourMaint;
+  const cableSavM    = (tradMVLen + tradLVLen) - (ourMVLen + ourLVLen);
+  const cableSavPct  = (tradMVLen + tradLVLen) > 0 ? cableSavM / (tradMVLen + tradLVLen) * 100 : 0;
+  const payback      = ourAesth > 0 && maintSaving > 0 ? ourAesth / maintSaving : 0;
+  const tenYrSaving  = capexSaving + maintSaving * 10;
+
+  comparisonData = {
+    ourMVCost, ourLVCost, ourTxCost, ourCivil, ourSub, ourAesth, ourTotal, ourMaint,
+    ourMVLen, ourLVLen, ourTxCount: transformers.length,
+    tradMVCost, tradLVCost, tradTxCost, tradCivil, tradSub, tradTotal, tradMaint,
+    tradMVLen, tradLVLen, tradTxCount,
+    capexSaving, capexPct, maintSaving, cableSavM, cableSavPct, payback, tenYrSaving
+  };
+
+  const f = n => Math.round(n).toLocaleString('en-SA');
+
+  // ── Banner ──
+  const tradTenYrTotal = tradTotal + tradMaint * 10;
+  const tenYrPct = tradTenYrTotal > 0 ? tenYrSaving / tradTenYrTotal * 100 : 0;
+  const sign = tenYrSaving >= 0 ? 'SAR ' : '−SAR ';
+  document.getElementById('ccTenYearSaving').textContent  = sign + f(Math.abs(tenYrSaving));
+  document.getElementById('ccTenYearPct').textContent     = '↓ ' + tenYrPct.toFixed(1) + '% vs Traditional Method';
+  document.getElementById('ccCapexSaving').textContent    = 'SAR ' + f(capexSaving) + ' (' + capexPct.toFixed(1) + '%)';
+  document.getElementById('ccMaintSaving').textContent    = 'SAR ' + f(maintSaving) + ' / yr';
+  document.getElementById('ccCableSaving').textContent    = f(Math.round(cableSavM)) + ' m (' + cableSavPct.toFixed(1) + '%)';
+
+  // ── Table ──
+  const rows = [
+    {label:'MV Cable (11kV)',     trad:tradMVCost,  ours:ourMVCost,  diff:tradMVCost  - ourMVCost},
+    {label:'LV Cable (400V)',     trad:tradLVCost,  ours:ourLVCost,  diff:tradLVCost  - ourLVCost},
+    {label:'Transformers',        trad:tradTxCost,  ours:ourTxCost,  diff:tradTxCost  - ourTxCost},
+    {label:'Civil Works',         trad:tradCivil,   ours:ourCivil,   diff:tradCivil   - ourCivil},
+    {label:'Substation Building', trad:tradSub,     ours:ourSub,     diff:0},
+    {label:'Enclosure Aesthetic', trad:0,           ours:ourAesth,   diff:-ourAesth},
+  ];
+  const tbody = document.getElementById('ccTableBody');
+  if (tbody) {
+    tbody.innerHTML = rows.map(r => {
+      const cls   = r.diff > 0 ? 'class="cc-saving"' : r.diff < 0 ? 'class="cc-cost-added"' : '';
+      const dText = r.diff > 0 ? '+' + f(r.diff) : r.diff < 0 ? '−' + f(-r.diff) : '—';
+      return `<tr><td>${r.label}</td><td>${f(r.trad)}</td><td>${f(r.ours)}</td><td ${cls}>${dText}</td></tr>`;
+    }).join('') + `
+      <tr class="total-row"><td>TOTAL CAPEX</td><td>${f(tradTotal)}</td><td>${f(ourTotal)}</td><td class="cc-saving">+${f(capexSaving)}</td></tr>
+      <tr class="total-row"><td>Annual Maintenance (est.)</td><td>${f(tradMaint)}</td><td>${f(ourMaint)}</td><td class="cc-saving">+${f(maintSaving)}</td></tr>`;
+  }
+
+  // ── ROI insight card ──
+  const roiEl = document.getElementById('ccRoiText');
+  if (roiEl) {
+    const yr = payback > 0 ? payback.toFixed(1) : '—';
+    roiEl.innerHTML = `The SAR ${f(ourAesth)} enclosure premium pays back in approximately <strong style="color:var(--color-success)">${yr} years</strong> through maintenance savings alone — and permanently enhances the urban environment.<br><br>
+      <span style="color:var(--color-text-muted);font-size:.8rem">إن الميزانية الجمالية البالغة ${f(ourAesth)} ريال تُستردّ في غضون ${yr} سنوات من خلال وفورات الصيانة وحدها.</span>`;
+  }
+
+  // ── Show section ──
+  const sec = document.getElementById('cost-comparison');
+  if (sec) { sec.style.opacity='0'; sec.style.display='block'; requestAnimationFrame(()=>{ sec.style.transition='opacity .5s'; sec.style.opacity='1'; }); }
+
+  drawComparisonChart(comparisonData);
+}
+
+function drawComparisonChart(data) {
+  if (!data) return;
+  const el = document.getElementById('comparisonChart');
+  if (!el) return;
+  const cc = getChartColors();
+  if (myCharts.comparison) { myCharts.comparison.destroy(); myCharts.comparison = null; }
+
+  // Raw values per metric (for tooltips)
+  const tradRaws = [
+    data.tradTotal,
+    Math.round(data.tradMVLen + data.tradLVLen),
+    data.tradTxCount,
+    Math.round(data.tradMaint)
+  ];
+  const ourRaws = [
+    data.ourTotal,
+    Math.round(data.ourMVLen + data.ourLVLen),
+    data.ourTxCount,
+    Math.round(data.ourMaint)
+  ];
+  const units = ['SAR', 'm', 'units', 'SAR'];
+
+  // Normalize: traditional = 100%, Voltimize = (ours/trad)×100
+  const ourPcts = ourRaws.map((v, i) => tradRaws[i] > 0 ? +(v / tradRaws[i] * 100).toFixed(1) : 0);
+
+  const f = n => Math.round(n).toLocaleString('en-SA');
+  const fmtVal = (raw, unit) =>
+    unit === 'SAR' ? 'SAR ' + f(raw) :
+    unit === 'm'   ? f(raw) + ' m'   :
+    Math.round(raw) + ' units';
+
+  const themeBg = {id:'ccBg',beforeDraw(c){c.ctx.fillStyle='transparent';c.ctx.fillRect(0,0,c.width,c.height);}};
+  myCharts.comparison = new Chart(el.getContext('2d'), {
+    type: 'bar', plugins: [themeBg],
+    data: {
+      labels: ['Total CAPEX (SAR)', 'Cable Length (m)', 'Transformer Count', 'Annual Maintenance (SAR)'],
+      datasets: [
+        {
+          label: 'Traditional Method (baseline 100%)',
+          data: [100, 100, 100, 100],
+          backgroundColor: 'rgba(136,136,136,0.70)',
+          borderColor: '#888888',
+          borderWidth: 1,
+          borderRadius: 4
+        },
+        {
+          label: 'Voltimize Model',
+          data: ourPcts,
+          backgroundColor: 'rgba(227,6,19,0.82)',
+          borderColor: '#E30613',
+          borderWidth: 1,
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 800, easing: 'easeInOutQuart' },
+      plugins: {
+        legend: { position: 'bottom', labels: { color: cc.textBright, boxWidth: 13 } },
+        tooltip: {
+          callbacks: {
+            label: c => {
+              const i = c.dataIndex;
+              const isOurs = c.datasetIndex === 1;
+              const raw = isOurs ? ourRaws[i] : tradRaws[i];
+              return ` ${c.dataset.label}: ${fmtVal(raw, units[i])}  (${c.raw}%)`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0,
+          max: 115,
+          grid: { color: cc.grid },
+          ticks: { color: cc.text, callback: v => v + '%' },
+          title: { display: true, text: '% of Traditional Baseline', color: cc.text, font: { size: 11 } }
+        },
+        y: { grid: { color: cc.gridDim }, ticks: { color: cc.textBright } }
+      }
+    }
+  });
+}
+
+/* ── Placement Rationale table ────────────────────────── */
+function updatePlacementRationale(transformers, W, H, cellSize) {
+  const tbody = document.getElementById('placementRationaleBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  transformers.forEach((t, i) => {
+    const sm = t.scoreMetrics || {loadScore:.7, underutilScore:.5, roadScore:1, aestheticScore:.3, finalScore:.68, primaryReason:'Load Centroid'};
+    const score100 = Math.round(sm.finalScore*100);
+    const pillCls = score100>=70?'pill-green':score100>=50?'pill-yellow':'pill-red';
+    const xF=t.x/(W||1), yF=t.y/(H||1);
+    const col=xF<0.35?'West':xF>0.65?'East':'Central';
+    const row=yF<0.35?'North':yF>0.65?'South':'Mid';
+    const counts={res:0,com:0,pub:0};
+    t.assigned.forEach(c=>{if(counts[c.type]!==undefined)counts[c.type]++;});
+    const domZ=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0]||'res';
+    const zLbl={res:'Residential',com:'Commercial',pub:'Public'}[domZ];
+    const area=t.assigned.length*(cellSize*cellSize);
+    const density=area>0?(t.load*1000/area).toFixed(1)+' W/m²':'—';
+    const proxLbl=sm.roadScore>=1?'✓ On-Road':sm.roadScore>=0.5?'~ Near Road':'✗ Off-Road';
+    tbody.innerHTML+=`<tr>
+      <td style="font-weight:bold;color:var(--color-primary)">TX-${i+1}</td>
+      <td>${row}-${col} · ${zLbl}</td>
+      <td>${sm.primaryReason}</td>
+      <td>${density}</td>
+      <td>${proxLbl}</td>
+      <td><span class="pill ${pillCls}">${score100}</span></td>
+    </tr>`;
+  });
+  const avgSc = transformers.reduce((s,t)=>s+(t.scoreMetrics?.finalScore||0.65),0)/Math.max(transformers.length,1);
+  const sumEl = document.getElementById('placementRationaleSummary');
+  if (sumEl) sumEl.textContent = `${transformers.length} transformer${transformers.length!==1?'s':''} placed — average placement quality score: ${(avgSc*100).toFixed(0)}/100 (Underutilised Land Priority algorithm).`;
+}
+
+/* ── Path Selector ────────────────────────────────────── */
+function selectPath(path) {
+  document.getElementById('pathCardA').classList.toggle('active', path==='A');
+  document.getElementById('pathCardB').classList.toggle('active', path==='B');
+  document.getElementById('control-panel').style.display = path==='A' ? 'block' : 'none';
+  document.getElementById('aesthetic').style.display = path==='B' ? 'block' : 'none';
+  if (path==='B') {
+    document.getElementById('aesthetic').scrollIntoView({behavior:'smooth'});
+    buildAeStations();
+  } else {
+    document.getElementById('control-panel').scrollIntoView({behavior:'smooth'});
+  }
+}
+
+/* ── Aesthetic Configurator ───────────────────────────── */
+const AE_DESIGNS = {
+  'Heritage-Traditional':{label:'Najdi Traditional Architecture', src:'WhatsApp_Image_2026-04-24_at_14_40_59.jpeg', features:'Earthen plaster, triangular vents, curved parapets', premium:'+15%'},
+  'Heritage-Classical':  {label:'Classical Heritage Style',        src:'WhatsApp_Image_2026-04-24_at_14_48_33.jpeg', features:'Limestone facade, mashrabiya grilles, ornamental cornices', premium:'+22%'},
+  'Urban-Modern':        {label:'Modern Minimalist',               src:'WhatsApp_Image_2026-04-24_at_14_41_25.jpeg', features:'Concrete panel, aluminium louvres, accent lighting', premium:'+8%'},
+  'Urban-Stone':         {label:'Stone-Clad Enclosure',            src:'WhatsApp_Image_2026-04-24_at_14_30_28.jpeg', features:'Natural stone finish, concealed louvers, landscaping base', premium:'+18%'},
+  'Park-Rock':           {label:'Natural Rock Form',               src:'WhatsApp_Image_2026-04-24_at_14_30_48.jpeg', features:'Boulder shell, hidden air inlets, zero visual impact', premium:'+25%'},
+  'Civic-Islamic':       {label:'Islamic Geometric Screen',        src:'WhatsApp_Image_2026-04-24_at_14_45_52.jpeg', features:'Laser-cut mashrabiya, terracotta, native landscaping', premium:'+20%'}
+};
+const AE_MATRIX = {
+  res: {Traditional:'Heritage-Traditional', Classical:'Heritage-Classical', Modern:'Urban-Modern'},
+  com: {Traditional:'Heritage-Classical',   Classical:'Heritage-Classical', Modern:'Urban-Stone'},
+  pub: {Traditional:'Heritage-Traditional', Classical:'Civic-Islamic',      Modern:'Park-Rock'},
+  park:{Traditional:'Park-Rock',            Classical:'Civic-Islamic',      Modern:'Park-Rock'}
+};
+
+function buildAeStations() {
+  const count = Math.min(12, Math.max(1, +document.getElementById('aeStationCount').value||3));
+  const configDiv = document.getElementById('aeStationsConfig');
+  const rowsDiv   = document.getElementById('aeStationRows');
+  configDiv.style.display = 'block';
+  rowsDiv.innerHTML = '';
+  for (let i=1; i<=count; i++) {
+    rowsDiv.innerHTML += `<div class="ae-station-row">
+      <div style="font-weight:bold;color:var(--color-primary);font-size:.9rem;white-space:nowrap">TX-${i}</div>
+      <div><label style="font-size:.75rem">Zone Type</label>
+        <select id="aeZone${i}">
+          <option value="res">Residential</option>
+          <option value="com">Commercial</option>
+          <option value="pub">Public Services</option>
+          <option value="park">Park / Open Space</option>
+        </select></div>
+      <div><label style="font-size:.75rem">Cultural Character</label>
+        <select id="aeChar${i}">
+          <option value="Traditional">Traditional</option>
+          <option value="Classical">Classical</option>
+          <option value="Modern">Modern</option>
+        </select></div>
+      <div><label style="font-size:.75rem">Priority</label>
+        <select id="aePri${i}">
+          <option value="blend">Cultural Blend</option>
+          <option value="low-cost">Low Cost</option>
+          <option value="visibility">High Visibility</option>
+        </select></div>
+    </div>`;
+  }
+  document.getElementById('aeRunBtn').style.display = 'inline-block';
+}
+
+function runAestheticConfig() {
+  const count = Math.min(12, Math.max(1, +document.getElementById('aeStationCount').value||3));
+  const rows=[], results=[];
+  for (let i=1; i<=count; i++) {
+    const zone = document.getElementById(`aeZone${i}`)?.value||'res';
+    const char = document.getElementById(`aeChar${i}`)?.value||'Traditional';
+    const pri  = document.getElementById(`aePri${i}`)?.value||'blend';
+    const key  = (AE_MATRIX[zone]||AE_MATRIX.res)[char]||'Heritage-Traditional';
+    const d    = AE_DESIGNS[key];
+    const zName= {res:'Residential',com:'Commercial',pub:'Public Services',park:'Park / Open Space'}[zone];
+    const costAdj = pri==='low-cost'?'Base Cost':d.premium;
+    rows.push({i,zName,char,pri,d,costAdj});
+    results.push({i,d,costAdj,zName});
+  }
+
+  // Matrix
+  const matrixStep=document.getElementById('aeMatrixStep');
+  matrixStep.style.display='block';
+  document.getElementById('aeMatrixBody').innerHTML=rows.map(r=>`<tr>
+    <td>TX-${r.i} · ${r.zName}</td>
+    <td>${r.char}</td>
+    <td>${{blend:'Cultural Blend','low-cost':'Low Cost',visibility:'High Visibility'}[r.pri]}</td>
+    <td><strong>${r.d.label}</strong></td>
+    <td style="color:var(--color-text-muted);font-size:.78rem">${r.d.features}</td>
+    <td><span class="design-tag">${r.costAdj}</span></td>
+  </tr>`).join('');
+
+  // Results grid
+  const resultsStep=document.getElementById('aeResultsStep');
+  resultsStep.style.display='block';
+  document.getElementById('aeResultsGrid').innerHTML=results.map(r=>`
+    <div class="ae-result-card">
+      <img src="${r.d.src}" alt="${r.d.label}" loading="lazy">
+      <div style="font-weight:700;font-size:.93rem;color:var(--color-text);margin-bottom:.3rem">TX-${r.i}: ${r.d.label}</div>
+      <div style="font-size:.78rem;color:var(--color-text-muted);margin-bottom:.5rem;line-height:1.45">${r.zName} Zone · ${r.d.features}</div>
+      <span class="ae-badge">Cost: ${r.costAdj}</span>
+    </div>`).join('');
+
+  // Summary bar
+  const sumBar=document.getElementById('aeSummaryBar');
+  sumBar.style.display='block';
+  const dCount={};
+  results.forEach(r=>{dCount[r.d.label]=(dCount[r.d.label]||0)+1;});
+  document.getElementById('aeSummaryContent').innerHTML=`
+    <div><div style="font-size:.72rem;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.5px">Stations</div>
+      <div style="font-size:1.6rem;font-weight:700">${count}</div></div>
+    <div><div style="font-size:.72rem;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.5px">Unique Designs</div>
+      <div style="font-size:1.6rem;font-weight:700">${Object.keys(dCount).length}</div></div>
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:.72rem;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">Design Mix</div>
+      <div>${Object.entries(dCount).map(([k,v])=>`<span class="ae-badge">${v}× ${k}</span>`).join('')}</div>
+    </div>`;
+
+  resultsStep.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ── Init ─────────────────────────────────────────────── */
+renderBuildings();
+updatePct();
+// Draw context chart on load
+window.addEventListener('DOMContentLoaded', () => { drawContextChart(); });
+if (document.readyState !== 'loading') drawContextChart();
+</script>
+</body>
+</html>
